@@ -65,6 +65,13 @@ message types (NABU -> Network Adapter) have the MSB set to zero,
 response message types have MSB set to one.  The layout of the message
 itself depends on the message type.
 
+## Switching to the new protocol
+
+The NABU application switches to the new protocol by sending the
+single byte 0xaf to the network adapter.  If the network adapter
+supports the new protocol, it will respond with an OK response (see
+below) and then wait for further messages in the new framing format.
+
 ## Defined request messages
 
 ### STORAGE-HTTP-GET
