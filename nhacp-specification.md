@@ -69,8 +69,9 @@ itself depends on the message type.
 
 The NABU application switches to the new protocol by sending the
 single byte 0xaf to the network adapter.  If the network adapter
-supports the new protocol, it will respond with an OK response (see
-below) and then wait for further messages in the new framing format.
+supports the new protocol, it will respond with an PROTOCOL-STARTED
+response (see below) and then wait for further messages in the new
+framing format.
 
 ## Defined request messages
 
@@ -86,7 +87,7 @@ index | u8 | Storage slot to use for reponse
 url-length | u8 | Length of url in bytes
 url | char* | URL String
 
-Possible Responses: STORAGE-LOADED, ERROR
+Possible responses: STORAGE-LOADED, ERROR
 
 ### STORAGE-LOAD-FILE
 
@@ -99,7 +100,7 @@ index | u8 | Storage slot to use for the file's content
 filename-length | u8 | Length of filename in bytes
 filename | char* | Filename
 
-Possible Responses: STORAGE-LOADED, ERROR
+Possible responses: STORAGE-LOADED, ERROR
 
 ### STORAGE-GET
 
@@ -112,7 +113,7 @@ index | u8 | Storage slot to access
 offset | u32 | Offset into the storage in bytes
 length | u16 | Number of bytes to return
 
-Possible Responses: DATA-BUFFER, ERROR
+Possible responses: DATA-BUFFER, ERROR
 
 ### STORAGE-PUT
 
@@ -127,7 +128,63 @@ offset | u32 | Offset into the storage in bytes
 length | u16 | Number of bytes to write
 data | u8* | Data to update the storage with
 
-Possible Responses: OK, ERROR
+Possible responses: OK, ERROR
+
+### GET-DATE-TIME
+
+Retrieve the current date and time from the network adapter.
+
+Name | Type | Notes
+-----|------|------
+type | u16 | 0x0005
+
+Possible responses: DATE-TIME, ERROR
+
+### JOIN-CHAT
+
+Join the chat room.
+
+Name | Type | Notes
+-----|------|------
+type | u16 | 0x0006
+nickname-length | u8 | Length of nickname
+nickname | char* | Nickname to use
+
+Possible responses: OK, ERROR
+
+### SEND-CHAT-MESSAGE
+
+Send a message to the chat room.
+
+Name | Type | Notes
+-----|------|------
+type | u16 | 0x0007
+message-length | u8 | Length of message
+message | char* | Message to send
+
+Possible responses: OK, ERROR
+
+### POLL-CHAT
+
+Check chat for pending messages.
+
+Name | Type | Notes
+-----|------|------
+type | u16 | 0x0009
+
+Possible responses: CHAT-SYSTEM-MESSAGE, CHAT-USER-MESSAGE, NO-CHAT-MESSAGE, ERROR
+
+### LEAVE-CHAT
+
+Leave the chat room.
+
+Name | Type | Notes
+-----|------|------
+type | u16 | 0x0009
+message-length | u8 | Length of leaving message
+message | char* | Leaving message
+
+Possible responses: OK, ERROR
 
 ### END-PROTOCOL
 
@@ -144,13 +201,22 @@ like normal.
 
 ## Defined response messages
 
-#### OK
+### PROTOCOL-STARTED
+
+Name | Type | Notes
+-----|------|------
+type | u16 | 0x8000
+version | u16 | Version number of the protocol
+adapter-id-length | u8 | Length of adapter identification string
+adapter-id | char* | Adapter identification string
+
+### OK
 
 Name | Type | Notes
 -----|------|------
 type | u16 | 0x8000
 
-#### ERROR
+### ERROR
 
 Name | Type | Notes
 -----|------|------
@@ -158,20 +224,50 @@ type | u16 | 0x8001
 message-length | u8 | Length of error message
 message | char* | Error message
 
-#### STORAGE-LOADED
+### STORAGE-LOADED
 
 Name | Type | Notes
 -----|------|------
 type | u16 | 0x8010
 length | u32 | Length of the data that was buffered
 
-#### DATA-BUFFER
+### DATA-BUFFER
 
 Name | Type | Notes
 -----|------|------
 type | u16 | 0x8011
 length | u16 | Length of response
 data | u8* | Data from buffer
+
+### DATE-TIME
+
+Name | Type | Notes
+-----|------|------
+type | u16 | 0x8012
+date | char[8] | Current date in YYYYMMDD format
+time | char[6] | Current time in HHMMSS format
+
+### CHAT-SYSTEM-MESSAGE
+
+Name | Type | Notes
+-----|------|------
+type | u16 | 0x8013
+message-length | u8 | Length of message
+message | char* | Message
+
+### CHAT-USER-MESSAGE
+
+Name | Type | Notes
+-----|------|------
+type | u16 | 0x8014
+message-length | u8 | Length of message
+message | char* | Message
+
+### NO-CHAT-MESSAGE
+
+Name | Type | Notes
+-----|------|------
+type | u16 | 0x8015
 
 ## Recovering from a crash
 
