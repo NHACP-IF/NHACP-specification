@@ -83,7 +83,7 @@ given index.
 
 Name | Type | Notes
 -----|------|------
-type | u16 | 0x0001
+type | u8 | 0x01
 index | u8 | Storage slot to use for reponse
 url-length | u8 | Length of url in bytes
 url | char* | URL String
@@ -96,7 +96,7 @@ Load a file stored in in the network adapter under the given index.
 
 Name | Type | Notes
 -----|------|------
-type | u16 | 0x0002
+type | u8 | 0x02
 index | u8 | Storage slot to use for the file's content
 filename-length | u8 | Length of filename in bytes
 filename | char* | Filename
@@ -109,7 +109,7 @@ Get data from network adapter storage
 
 Name | Type | Notes
 -----|------|------
-type | u16 | 0x0003
+type | u8 | 0x03
 index | u8 | Storage slot to access
 offset | u32 | Offset into the storage in bytes
 length | u16 | Number of bytes to return
@@ -123,7 +123,7 @@ underlying storage (file/URL) should be updated as well.
 
 Name | Type | Notes
 -----|------|------
-type | u16 | 0x0004
+type | u8 | 0x04
 index | u8 | Storage slot to access
 offset | u32 | Offset into the storage in bytes
 length | u16 | Number of bytes to write
@@ -137,55 +137,9 @@ Retrieve the current date and time from the network adapter.
 
 Name | Type | Notes
 -----|------|------
-type | u16 | 0x0005
+type | u8 | 0x05
 
 Possible responses: DATE-TIME, ERROR
-
-### JOIN-CHAT
-
-Join the chat room.
-
-Name | Type | Notes
------|------|------
-type | u16 | 0x0006
-nickname-length | u8 | Length of nickname
-nickname | char* | Nickname to use
-
-Possible responses: OK, ERROR
-
-### SEND-CHAT-MESSAGE
-
-Send a message to the chat room.
-
-Name | Type | Notes
------|------|------
-type | u16 | 0x0007
-message-length | u8 | Length of message
-message | char* | Message to send
-
-Possible responses: OK, ERROR
-
-### POLL-CHAT
-
-Check chat for pending messages.
-
-Name | Type | Notes
------|------|------
-type | u16 | 0x0009
-
-Possible responses: CHAT-SYSTEM-MESSAGE, CHAT-USER-MESSAGE, NO-CHAT-MESSAGE, ERROR
-
-### LEAVE-CHAT
-
-Leave the chat room.
-
-Name | Type | Notes
------|------|------
-type | u16 | 0x0009
-message-length | u8 | Length of leaving message
-message | char* | Leaving message
-
-Possible responses: OK, ERROR
 
 ### END-PROTOCOL
 
@@ -194,7 +148,7 @@ legacy menu system.
 
 Name | Type | Notes
 -----|------|------
-type | u16 | 0x7ff
+type | u8 | 0xEF
 
 No specific response message is returned by the network adapter.  The
 NABU is free to send legacy messages and expect the adapter to respond
@@ -207,7 +161,7 @@ like normal.
 
 Name | Type | Notes
 -----|------|------
-type | u16 | 0x8000
+type | u8 | 0x80
 version | u16 | Version number of the protocol
 adapter-id-length | u8 | Length of adapter identification string
 adapter-id | char* | Adapter identification string
@@ -216,13 +170,13 @@ adapter-id | char* | Adapter identification string
 
 Name | Type | Notes
 -----|------|------
-type | u16 | 0x8001
+type | u8 | 0x81
 
 ### ERROR
 
 Name | Type | Notes
 -----|------|------
-type | u16 | 0x8002
+type | u8 | 0x82
 message-length | u8 | Length of error message
 message | char* | Error message
 
@@ -230,14 +184,14 @@ message | char* | Error message
 
 Name | Type | Notes
 -----|------|------
-type | u16 | 0x8010
+type | u8 | 0x83
 length | u32 | Length of the data that was buffered
 
 ### DATA-BUFFER
 
 Name | Type | Notes
 -----|------|------
-type | u16 | 0x8011
+type | u8 | 0x84
 length | u16 | Length of response
 data | u8* | Data from buffer
 
@@ -245,31 +199,9 @@ data | u8* | Data from buffer
 
 Name | Type | Notes
 -----|------|------
-type | u16 | 0x8012
+type | u8 | 0x85
 date | char[8] | Current date in YYYYMMDD format
 time | char[6] | Current time in HHMMSS format
-
-### CHAT-SYSTEM-MESSAGE
-
-Name | Type | Notes
------|------|------
-type | u16 | 0x8013
-message-length | u8 | Length of message
-message | char* | Message
-
-### CHAT-USER-MESSAGE
-
-Name | Type | Notes
------|------|------
-type | u16 | 0x8014
-message-length | u8 | Length of message
-message | char* | Message
-
-### NO-CHAT-MESSAGE
-
-Name | Type | Notes
------|------|------
-type | u16 | 0x8015
 
 <!--- KEEPME --->
 ## Recovering from a crash
