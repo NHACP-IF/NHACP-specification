@@ -114,7 +114,7 @@ underlying storage (file/URL) should be updated as well.
 
 Name | Type | Notes
 -----|------|------
-type | u16 | 0x0003
+type | u16 | 0x0004
 index | u8 | Storage slot to access
 offset | u32 | Offset into the storage in bytes
 length | u16 | Number of bytes to write
