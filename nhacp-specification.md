@@ -122,6 +122,19 @@ data | u8* | Data to update the storage with
 
 Possible Responses: OK, ERROR
 
+### END-PROTOCOL
+
+Return to legacy protocol processing, i.e. before returning to the
+legacy menu system.
+
+Name | Type | Notes
+-----|------|------
+type | u16 | 0x7ff
+
+No specific response message is returned by the network adapter.  The
+NABU is free to send legacy messages and expect the adapter to respond
+like normal.
+
 ## Defined response messages
 
 #### OK
