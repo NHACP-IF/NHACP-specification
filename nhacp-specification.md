@@ -75,6 +75,7 @@ framing format.
 
 ## Defined request messages
 
+<!--- KEEPME request-messages --->
 ### STORAGE-HTTP-GET
 
 GET a URL and buffer the contents in the network adapter under the
@@ -201,6 +202,7 @@ like normal.
 
 ## Defined response messages
 
+<!--- KEEPME response-messages --->
 ### PROTOCOL-STARTED
 
 Name | Type | Notes
@@ -214,13 +216,13 @@ adapter-id | char* | Adapter identification string
 
 Name | Type | Notes
 -----|------|------
-type | u16 | 0x8000
+type | u16 | 0x8001
 
 ### ERROR
 
 Name | Type | Notes
 -----|------|------
-type | u16 | 0x8001
+type | u16 | 0x8002
 message-length | u8 | Length of error message
 message | char* | Error message
 
@@ -269,6 +271,7 @@ Name | Type | Notes
 -----|------|------
 type | u16 | 0x8015
 
+<!--- KEEPME --->
 ## Recovering from a crash
 
 When a NABU application crashes while the modern protocol is selected,
