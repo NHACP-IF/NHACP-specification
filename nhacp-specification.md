@@ -60,7 +60,7 @@ condition.
 
 ## Message type
 
-The first field of each message is a 2 byte message type.  Request
+The first field of each message is a 1 byte message type.  Request
 message types (NABU -> Network Adapter) have the MSB set to zero,
 response message types have MSB set to one.  The layout of the message
 itself depends on the message type.
