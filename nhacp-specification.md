@@ -73,20 +73,19 @@ supports the new protocol, it will respond with an PROTOCOL-STARTED
 response (see below) and then wait for further messages in the new
 framing format.
 
-## Defined request messages
+## Request messages
 
-<!--- KEEPME request-messages --->
 ### STORAGE-HTTP-GET
 
 GET a URL and buffer the contents in the network adapter under the
 given index.
 
-Name | Type | Notes
------|------|------
-type | u8 | 0x01
-index | u8 | Storage slot to use for reponse
-url-length | u8 | Length of url in bytes
-url | char* | URL String
+| Name       | Type  | Notes                           |
+|------------|-------|---------------------------------|
+| type       | u8    | 0x01                            |
+| index      | u8    | Storage slot to use for reponse |
+| url-length | u8    | Length of url in bytes          |
+| url        | char* | URL String                      |
 
 Possible responses: STORAGE-LOADED, ERROR
 
@@ -94,12 +93,12 @@ Possible responses: STORAGE-LOADED, ERROR
 
 Load a file stored in in the network adapter under the given index.
 
-Name | Type | Notes
------|------|------
-type | u8 | 0x02
-index | u8 | Storage slot to use for the file's content
-filename-length | u8 | Length of filename in bytes
-filename | char* | Filename
+| Name            | Type  | Notes                                      |
+|-----------------|-------|--------------------------------------------|
+| type            | u8    | 0x02                                       |
+| index           | u8    | Storage slot to use for the file's content |
+| filename-length | u8    | Length of filename in bytes                |
+| filename        | char* | Filename                                   |
 
 Possible responses: STORAGE-LOADED, ERROR
 
@@ -107,12 +106,12 @@ Possible responses: STORAGE-LOADED, ERROR
 
 Get data from network adapter storage
 
-Name | Type | Notes
------|------|------
-type | u8 | 0x03
-index | u8 | Storage slot to access
-offset | u32 | Offset into the storage in bytes
-length | u16 | Number of bytes to return
+| Name   | Type | Notes                            |
+|--------|------|----------------------------------|
+| type   | u8   | 0x03                             |
+| index  | u8   | Storage slot to access           |
+| offset | u32  | Offset into the storage in bytes |
+| length | u16  | Number of bytes to return        |
 
 Possible responses: DATA-BUFFER, ERROR
 
@@ -121,13 +120,13 @@ Possible responses: DATA-BUFFER, ERROR
 Update data stored in the network adapter.  If possible, the
 underlying storage (file/URL) should be updated as well.
 
-Name | Type | Notes
------|------|------
-type | u8 | 0x04
-index | u8 | Storage slot to access
-offset | u32 | Offset into the storage in bytes
-length | u16 | Number of bytes to write
-data | u8* | Data to update the storage with
+| Name   | Type | Notes                            |
+|--------|------|----------------------------------|
+| type   | u8   | 0x04                             |
+| index  | u8   | Storage slot to access           |
+| offset | u32  | Offset into the storage in bytes |
+| length | u16  | Number of bytes to write         |
+| data   | u8*  | Data to update the storage with  |
 
 Possible responses: OK, ERROR
 
@@ -135,9 +134,9 @@ Possible responses: OK, ERROR
 
 Retrieve the current date and time from the network adapter.
 
-Name | Type | Notes
------|------|------
-type | u8 | 0x05
+| Name | Type | Notes |
+|------|------|-------|
+| type | u8   | 0x05  |
 
 Possible responses: DATE-TIME, ERROR
 
@@ -146,64 +145,62 @@ Possible responses: DATE-TIME, ERROR
 Return to legacy protocol processing, i.e. before returning to the
 legacy menu system.
 
-Name | Type | Notes
------|------|------
-type | u8 | 0xEF
+| Name | Type | Notes |
+|------|------|-------|
+| type | u8   | 0xEF  |
 
 No specific response message is returned by the network adapter.  The
 NABU is free to send legacy messages and expect the adapter to respond
 like normal.
 
-## Defined response messages
+## Response messages
 
-<!--- KEEPME response-messages --->
 ### PROTOCOL-STARTED
 
-Name | Type | Notes
------|------|------
-type | u8 | 0x80
-version | u16 | Version number of the protocol
-adapter-id-length | u8 | Length of adapter identification string
-adapter-id | char* | Adapter identification string
+| Name              | Type  | Notes                                   |
+|-------------------|-------|-----------------------------------------|
+| type              | u8    | 0x80                                    |
+| version           | u16   | Version number of the protocol          |
+| adapter-id-length | u8    | Length of adapter identification string |
+| adapter-id        | char* | Adapter identification string           |
 
 ### OK
 
-Name | Type | Notes
------|------|------
-type | u8 | 0x81
+| Name | Type | Notes |
+|------|------|-------|
+| type | u8   | 0x81  |
 
 ### ERROR
 
-Name | Type | Notes
------|------|------
-type | u8 | 0x82
-message-length | u8 | Length of error message
-message | char* | Error message
+| Name           | Type  | Notes                   |
+|----------------|-------|-------------------------|
+| type           | u8    | 0x82                    |
+| message-length | u8    | Length of error message |
+| message        | char* | Error message           |
 
 ### STORAGE-LOADED
 
-Name | Type | Notes
------|------|------
-type | u8 | 0x83
-length | u32 | Length of the data that was buffered
+| Name   | Type | Notes                                |
+|--------|------|--------------------------------------|
+| type   | u8   | 0x83                                 |
+| length | u32  | Length of the data that was buffered |
 
 ### DATA-BUFFER
 
-Name | Type | Notes
------|------|------
-type | u8 | 0x84
-length | u16 | Length of response
-data | u8* | Data from buffer
+| Name   | Type | Notes              |
+|--------|------|--------------------|
+| type   | u8   | 0x84               |
+| length | u16  | Length of response |
+| data   | u8*  | Data from buffer   |
 
 ### DATE-TIME
 
-Name | Type | Notes
------|------|------
-type | u8 | 0x85
-date | char[8] | Current date in YYYYMMDD format
-time | char[6] | Current time in HHMMSS format
+| Name | Type    | Notes                           |
+|------|---------|---------------------------------|
+| type | u8      | 0x85                            |
+| date | char[8] | Current date in YYYYMMDD format |
+| time | char[6] | Current time in HHMMSS format   |
 
-<!--- KEEPME --->
 ## Recovering from a crash
 
 When a NABU application crashes while the modern protocol is selected,
