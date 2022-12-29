@@ -187,11 +187,11 @@ like normal.
 
 ### DATA-BUFFER
 
-| Name   | Type | Notes              |
-|--------|------|--------------------|
-| type   | u8   | 0x84               |
-| length | u16  | Length of response |
-| data   | u8*  | Data from buffer   |
+| Name   | Type | Notes            |
+|--------|------|------------------|
+| type   | u8   | 0x84             |
+| length | u16  | Length of data   |
+| data   | u8*  | Data from buffer |
 
 ### DATE-TIME
 
