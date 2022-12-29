@@ -46,8 +46,8 @@ communication applications in which messages are sent to the NABU
 through e.g. a network service, the network adapter must buffer these
 messages until the NABU requests to see them.
 
-All messages exchanged use the big-endian byte order.  Thus, a 16 bit
-number 0xaa00 is transmitted as the two bytes 0x00 and 0xaa.
+All messages exchanged use the little-endian byte order.  Thus, a 16
+bit number 0xaa00 is transmitted as the two bytes 0x00 and 0xaa.
 
 Each message consists of a 16 bit length field followed by the number
 of bytes indicated by the length field.  The maximum length of a
