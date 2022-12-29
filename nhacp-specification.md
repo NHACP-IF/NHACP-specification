@@ -75,30 +75,22 @@ framing format.
 
 ## Request messages
 
-### STORAGE-HTTP-GET
+### STORAGE-OPEN
 
-GET a URL and buffer the contents in the network adapter under the
-given index.
+Open a URL and assign a storage index to it.  The URL can be relative
+or a file URL to open a local file.  Network adapters may implement
+additional, nonstandard URL schemes.  Relative URLs are interpreted 
+as files.  The flags field can be used to pass additional information
+to the storage handler.  The meaning of the flags is not specified in
+the protocol itself.
 
-| Name       | Type  | Notes                           |
-|------------|-------|---------------------------------|
-| type       | u8    | 0x01                            |
-| index      | u8    | Storage slot to use for reponse |
-| url-length | u8    | Length of url in bytes          |
-| url        | char* | URL String                      |
-
-Possible responses: STORAGE-LOADED, ERROR
-
-### STORAGE-LOAD-FILE
-
-Load a file stored in in the network adapter under the given index.
-
-| Name            | Type  | Notes                                      |
-|-----------------|-------|--------------------------------------------|
-| type            | u8    | 0x02                                       |
-| index           | u8    | Storage slot to use for the file's content |
-| filename-length | u8    | Length of filename in bytes                |
-| filename        | char* | Filename                                   |
+| Name       | Type  | Notes                                                              |
+|------------|-------|--------------------------------------------------------------------|
+| type       | u8    | 0x01                                                               |
+| index      | u8    | Storage slot to use for response (0xff => Network Adapter selects) |
+| flags      | u16   | Flags to pass to storage handler                                   |
+| url-length | u8    | Length of url in bytes                                             |
+| url        | char* | URL String                                                         |
 
 Possible responses: STORAGE-LOADED, ERROR
 
@@ -108,7 +100,7 @@ Get data from network adapter storage
 
 | Name   | Type | Notes                            |
 |--------|------|----------------------------------|
-| type   | u8   | 0x03                             |
+| type   | u8   | 0x02                             |
 | index  | u8   | Storage slot to access           |
 | offset | u32  | Offset into the storage in bytes |
 | length | u16  | Number of bytes to return        |
@@ -122,7 +114,7 @@ underlying storage (file/URL) should be updated as well.
 
 | Name   | Type | Notes                            |
 |--------|------|----------------------------------|
-| type   | u8   | 0x04                             |
+| type   | u8   | 0x03                             |
 | index  | u8   | Storage slot to access           |
 | offset | u32  | Offset into the storage in bytes |
 | length | u16  | Number of bytes to write         |
@@ -136,7 +128,7 @@ Retrieve the current date and time from the network adapter.
 
 | Name | Type | Notes |
 |------|------|-------|
-| type | u8   | 0x05  |
+| type | u8   | 0x04  |
 
 Possible responses: DATE-TIME, ERROR
 
@@ -180,10 +172,11 @@ like normal.
 
 ### STORAGE-LOADED
 
-| Name   | Type | Notes                                |
-|--------|------|--------------------------------------|
-| type   | u8   | 0x83                                 |
-| length | u32  | Length of the data that was buffered |
+| Name   | Type | Notes                                       |
+|--------|------|---------------------------------------------|
+| type   | u8   | 0x83                                        |
+| index  | u8   | Storage index that was provided or selected |
+| length | u32  | Length of the data that was buffered        |
 
 ### DATA-BUFFER
 
