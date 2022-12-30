@@ -147,7 +147,10 @@ like normal.
 
 ## Response messages
 
-### PROTOCOL-STARTED
+Type tags in response messages have their MSB set.  Their numbering
+must be consecutive to support fast dispatching on the type byte.
+
+### NHACP-STARTED
 
 | Name              | Type  | Notes                                   |
 |-------------------|-------|-----------------------------------------|
