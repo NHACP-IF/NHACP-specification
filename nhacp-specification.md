@@ -88,8 +88,8 @@ the protocol itself.
 |------------|-------|--------------------------------------------------------------------|
 | type       | u8    | 0x01                                                               |
 | index      | u8    | Storage slot to use for response (0xff => Network Adapter selects) |
-| flags      | u16   | Flags to pass to storage handler                                   |
-| url-length | u8    | Length of url in bytes                                             |
+| flags      | u16   | Flags to pass to storage handler (TBD)                             |
+| url-length | u8    | Length of resource in bytes                                        |
 | url        | char* | URL String                                                         |
 
 Possible responses: STORAGE-LOADED, ERROR
@@ -132,6 +132,16 @@ Retrieve the current date and time from the network adapter.
 
 Possible responses: DATE-TIME, ERROR
 
+### STORAGE-CLOSE
+
+Close a previously opened storage slot.  Any resources associated with
+it on the network adapter will be freed.
+
+| Name  | Type | Notes                 |
+|-------|------|-----------------------|
+| type  | u8   | 0x05                  |
+| index | u8   | Storage slot to close |
+
 ### END-PROTOCOL
 
 Return to legacy protocol processing, i.e. before returning to the
@@ -167,11 +177,12 @@ must be consecutive to support fast dispatching on the type byte.
 
 ### ERROR
 
-| Name           | Type  | Notes                   |
-|----------------|-------|-------------------------|
-| type           | u8    | 0x82                    |
-| message-length | u8    | Length of error message |
-| message        | char* | Error message           |
+| Name           | Type      | Notes                   |
+|----------------|-----------|-------------------------|
+| type           | u8        | 0x82                    |
+| code           | u16       | Error code (TBD)        |
+| message-length | u8        | Length of error message |
+| message        | char[255] | Error message           |
 
 ### STORAGE-LOADED
 
