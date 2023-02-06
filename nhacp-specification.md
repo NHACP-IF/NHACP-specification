@@ -84,6 +84,12 @@ as files.  The flags field can be used to pass additional information
 to the storage handler.  The meaning of the flags is not specified in
 the protocol itself.
 
+The network adapter will attempt to use the storage slot specified by
+the caller unless the caller specifies 0xff, in which case the network
+adapter will attempt to allocate a storage slot.  If the requested slot
+is already in-use by another storage object, the STORAGE-OPEN request
+MUST fail.
+
 | Name       | Type  | Notes                                                              |
 |------------|-------|--------------------------------------------------------------------|
 | type       | u8    | 0x01                                                               |
