@@ -178,6 +178,10 @@ it on the network adapter will be freed.
 | type  | u8   | 0x05                  |
 | index | u8   | Storage slot to close |
 
+No response message is returned by the network adapter.  If the server
+receives a slot that is not currently in use by the client, the request
+is simply ignored.
+
 ### END-PROTOCOL
 
 Return to legacy protocol processing, i.e. before returning to the
