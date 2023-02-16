@@ -65,6 +65,11 @@ message types (NABU -> Network Adapter) have the MSB set to zero,
 response message types have MSB set to one.  The layout of the message
 itself depends on the message type.
 
+## Error handling
+
+For requests that can return an error, there is a well-defined set of
+error codes with standard meanings.  See the ERROR response below.
+
 ## Switching to the new protocol
 
 The NABU application switches to the new protocol by sending the
@@ -72,6 +77,21 @@ single byte 0xaf to the network adapter.  If the network adapter
 supports the new protocol, it will respond with an PROTOCOL-STARTED
 response (see below) and then wait for further messages in the new
 framing format.
+
+## Protocol versioning
+
+The PROTOCOL-STARTED response contains a protocol version field.
+The initial version of that field was undefined and 0 by convention.
+This document describes version **0.1** of the protocol.  This
+section describes the changes between protocol revisions.  New
+revisions are bacakward-compatible with previous clients, to the
+extent possible; any possible compatibility issues are called out
+explicitly here.
+
+* Version 0.1
+    * Defined the protocol versioning convention.
+    * Defined the initial set of error codes.
+* Version 0.0 - Initial version
 
 ## Request messages
 
@@ -209,6 +229,19 @@ must be consecutive to support fast dispatching on the type byte.
 | adapter-id-length | u8    | Length of adapter identification string |
 | adapter-id        | char* | Adapter identification string           |
 
+The returned version is a single 16-bit unsigned integer that encodes
+the protocol version in a way that is directly arithmetically comparable.
+This is intended to make protocol version checking simple for the client.
+As a convention, the "major" and "minor" versions of the protocol are
+kept in the most-significant and last-significant 8 bits of the version
+field, respectively.  However, this is merely a convention and the
+version values defined here are authoritative:
+
+| Value  | Protocol version    |
+|--------|---------------------|
+| 0x0000 | initial NHACP draft |
+| 0x0001 | NHACP version 0.1   |
+
 ### OK
 
 | Name | Type | Notes |
@@ -220,9 +253,33 @@ must be consecutive to support fast dispatching on the type byte.
 | Name           | Type      | Notes                   |
 |----------------|-----------|-------------------------|
 | type           | u8        | 0x82                    |
-| code           | u16       | Error code (TBD)        |
+| code           | u16       | Error code              |
 | message-length | u8        | Length of error message |
 | message        | char[255] | Error message           |
+
+The following error codes are defined:
+
+| Name      | Value | Notes                         |
+|-----------|-------|-------------------------------|
+| undefined | 0     | undefined generic error       |
+| ENOTSUP   | 1     | Operation is not supported    |
+| EEOF      | 2     | End-of-file                   |
+| EPERM     | 3     | Operation is not permitted    |
+| ENOENT    | 4     | Requested file does not exist |
+| EIO       | 5     | Input/output error            |
+| EBADF     | 6     | Bad file descriptor           |
+| ENOMEM    | 7     | Out of memory                 |
+| EACCES    | 8     | Access denied                 |
+| EBUSY     | 9     | File is busy                  |
+| EEXIST    | 10    | File already exists           |
+| EISDIR    | 11    | File is a directory           |
+| EINVAL    | 12    | Invalid argument/request      |
+| ENFILE    | 13    | Too many open files           |
+| EFBIG     | 14    | File is too large             |
+| ENOSPC    | 15    | Out of space                  |
+| ESEEK     | 16    | Seek on non-seekable file     |
+
+All other error codes are reserved.
 
 ### STORAGE-LOADED
 
