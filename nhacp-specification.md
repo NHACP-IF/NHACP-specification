@@ -410,21 +410,20 @@ The following error codes are defined:
 |-----------|-------|-------------------------------|
 | undefined | 0     | undefined generic error       |
 | ENOTSUP   | 1     | Operation is not supported    |
-| EEOF      | 2     | End-of-file                   |
-| EPERM     | 3     | Operation is not permitted    |
-| ENOENT    | 4     | Requested file does not exist |
-| EIO       | 5     | Input/output error            |
-| EBADF     | 6     | Bad file descriptor           |
-| ENOMEM    | 7     | Out of memory                 |
-| EACCES    | 8     | Access denied                 |
-| EBUSY     | 9     | File is busy                  |
-| EEXIST    | 10    | File already exists           |
-| EISDIR    | 11    | File is a directory           |
-| EINVAL    | 12    | Invalid argument/request      |
-| ENFILE    | 13    | Too many open files           |
-| EFBIG     | 14    | File is too large             |
-| ENOSPC    | 15    | Out of space                  |
-| ESEEK     | 16    | Seek on non-seekable file     |
+| EPERM     | 2     | Operation is not permitted    |
+| ENOENT    | 3     | Requested file does not exist |
+| EIO       | 4     | Input/output error            |
+| EBADF     | 5     | Bad file descriptor           |
+| ENOMEM    | 6     | Out of memory                 |
+| EACCES    | 7     | Access denied                 |
+| EBUSY     | 8     | File is busy                  |
+| EEXIST    | 9     | File already exists           |
+| EISDIR    | 10    | File is a directory           |
+| EINVAL    | 11    | Invalid argument/request      |
+| ENFILE    | 12    | Too many open files           |
+| EFBIG     | 13    | File is too large             |
+| ENOSPC    | 14    | Out of space                  |
+| ESEEK     | 15    | Seek on non-seekable file     |
 
 All other error codes are reserved.
 
