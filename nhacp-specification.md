@@ -89,6 +89,19 @@ The layout of the message itself depends on the message type.
 For requests that can return an error, there is a well-defined set of
 error codes with standard meanings.  See the ERROR response below.
 
+In the original NHACP draft, the ERROR response could have returned a
+detailed error message in every response.  However, this requires that
+applications always have a buffer large enough to receive this error
+response (which was over 256 bytes in length).
+
+To address this concern, the behavior (but not the format) of the ERROR
+response has been changed to only include the fixed-sized portions of
+the response in the default ERROR response.  This allows requests that
+can return an ERROR response to have a buffer as small as 4 bytes to
+receive the initial error indication.  A new GET-ERROR-DETAILS request
+has been added for applications that wish to get detailed error information.
+See the GET-ERROR-DETAILS request below.
+
 ## Switching to the new protocol
 
 The NABU application switches to the new protocol by sending a
@@ -129,7 +142,7 @@ The PROTOCOL-STARTED response contains a protocol version field.
 The initial version of that field was undefined and 0 by convention.
 This document describes version **0.1** of the protocol.  This
 section describes the changes between protocol revisions.  New
-revisions are bacakward-compatible with previous clients, to the
+revisions are backward-compatible with previous clients, to the
 extent possible; any possible compatibility issues are called out
 explicitly here.
 
@@ -137,6 +150,7 @@ explicitly here.
     * Defined the protocol versioning convention.
     * Defined the new START-NHACP message.
     * Defined the initial set of error codes.
+    * Defined new ERROR response behavior and GET-ERROR-DETAILS request.
 * Version 0.0 - Initial version
 
 ## Request messages
@@ -248,6 +262,28 @@ No response message is returned by the network adapter.  If the server
 receives a slot that is not currently in use by the client, the request
 is simply ignored.
 
+### GET-ERROR-DETAILS
+
+Request details for the most recent ERROR response from the network
+adapter.
+
+| Name            | Type | Notes                                           |
+|-----------------|------|-------------------------------------------------|
+| type            | u8   | 0x06                                            |
+| code            | u16  | Last error code returned by the network adapter |
+| max-message-len | u8   | Maximum message length to return                |
+
+Possible responses: ERROR
+
+A network adapter MAY choose to remember the last error returned to an
+application, in which case if the error code in the request matches the
+saved error code, a detailed description of the error will be returned
+to the application.  If the network adapter does not remember the last
+error returned to an application, or if the error code does not match
+the last remembered error code, then the network adapter MUST return
+a generic error description string for the error code in the request.
+In either case, any saved error code is cleared.
+
 ### END-PROTOCOL
 
 Return to legacy protocol processing, i.e. before returning to the
@@ -302,6 +338,9 @@ version values defined here are authoritative:
 | code           | u16       | Error code              |
 | message-length | u8        | Length of error message |
 | message        | char[255] | Error message           |
+
+Note that for all requests other than GET-ERROR-DETAILS, the
+message-length field will be 0.
 
 The following error codes are defined:
 
