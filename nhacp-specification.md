@@ -19,7 +19,7 @@ adapters to support NABU applications.
 ## Serial communication
 
 The NABU HCCA serial interface is an asynchronous RS422 port running
-at ~111000 bits per second using 8 bits per character, no parity and
+at ~111860 bits per second using 8 bits per character, no parity and
 one stop bit.  As the bitrate of the interface does not match any of
 the standard baud rates provided by serial interfaces on modern
 computers, network adapters usually use the standard 115200 bps baud
@@ -49,14 +49,27 @@ messages until the NABU requests to see them.
 All messages exchanged use the little-endian byte order.  Thus, a 16
 bit number 0xaa00 is transmitted as the two bytes 0x00 and 0xaa.
 
-Each message consists of a 16 bit length field followed by the number
-of bytes indicated by the length field.  The maximum length of a
-message is 32767 bytes to ensure that the most significant bit of the
-message length is never set.  This helps in crash recovery (see
-below).
+Messages must be completely transmitted within one second, intended to
+reduce error recovery time.
 
-No further framing is provided.  Messages must be completely
-transmitted within one second.  The receiver should ignore partial
+Each message consists of a 16 bit length field followed by the number of
+bytes indicated by the length field.  Because messages must be completely
+transmitted within one second, there is a hard ceiling on the maximum
+transmission unit, dictacted by the NABU hardware.  With the native
+tramission rate of 111860 bits per second and many network adapter
+implementations using 2 stop bits, 11186 bytes is the practical limit
+that can be transmitted within the allotted time.  For this reason, the
+maximum length of a message is 8256 bytes.  This length was chosen for
+the following reasons:
+
+* It fits within the the one second time limit.
+* It is sufficient for an 8KB data payload plus request/response message
+  and framing overhead.
+* It satisfies a requirement of the original NHACP draft that the most
+  significant bit of the length field is never set, which aids in crash
+  recovery (see below).
+
+No further framing is provided.  The receiver should ignore partial
 messages and signal an error to the operator if it detects the timeout
 condition.
 
