@@ -53,7 +53,9 @@ Each message consists of a 16 bit length field followed by the number
 of bytes indicated by the length field.  The maximum length of a
 message is 32767 bytes to ensure that the most significant bit of the
 message length is never set.  This helps in crash recovery (see
-below).  No further framing is provided.  Messages must be completely
+below).
+
+No further framing is provided.  Messages must be completely
 transmitted within one second.  The receiver should ignore partial
 messages and signal an error to the operator if it detects the timeout
 condition.
@@ -62,8 +64,12 @@ condition.
 
 The first field of each message is a 1 byte message type.  Request
 message types (NABU -> Network Adapter) have the MSB set to zero,
-response message types have MSB set to one.  The layout of the message
-itself depends on the message type.
+response message types have MSB set to one, with two exceptions:
+
+* The START-NHACP request message type has the value 0x8f.
+* The END-PROTOCOL request message type has the value 0xef.
+
+The layout of the message itself depends on the message type.
 
 ## Error handling
 
@@ -72,11 +78,37 @@ error codes with standard meanings.  See the ERROR response below.
 
 ## Switching to the new protocol
 
-The NABU application switches to the new protocol by sending the
-single byte 0xaf to the network adapter.  If the network adapter
-supports the new protocol, it will respond with an PROTOCOL-STARTED
-response (see below) and then wait for further messages in the new
-framing format.
+The NABU application switches to the new protocol by sending a
+START-NHACP message with the following format:
+
+| Name    | Type    | Notes                          |
+|---------|---------|--------------------------------|
+| type    | u8      | 0x8f                           |
+| magic   | char[3] | "ACP"                          |
+| version | u16     | Version number of the protocol |
+
+If the network adapter supports the new protocol, it will response with
+a PROTOCOL-STARTED response (see below) and will then wait for futher messages
+in the new framing format.  If the client is using a protocol version greater
+than what the network adapter supports, the network adapter SHOULD ignore
+the message.
+
+In the original draft of NHACP, the NABU application switched to the new
+protocol by sending a single byte 0xaf to the network adapter.  Unfortunately,
+there were two issues with this:
+
+* The message byte 0xaf later collided with a different NABU network adapter
+  protocol extension.
+* The message had no way to convey any protocol versioning information to
+  the server.
+
+Due to its use of a multi-byte sequence, The new START-NHACP message is
+much less likely to collide with another message, and includes versioning
+information.
+
+Servers MAY wish to support the original 0xaf message type for NHACP; such
+a server MUST use the original framing mode if this message is used to start
+NHACP.
 
 ## Protocol versioning
 
@@ -90,6 +122,7 @@ explicitly here.
 
 * Version 0.1
     * Defined the protocol versioning convention.
+    * Defined the new START-NHACP message.
     * Defined the initial set of error codes.
 * Version 0.0 - Initial version
 
