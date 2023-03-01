@@ -460,3 +460,86 @@ the NABU ROM sends at least 4 "SET STATUS (0x83)" messages during
 startup, the network adapter can assume that if it receives a length
 field of 0x8383, it needs to restart in legacy protocol mode in order
 to boot the NABU.
+
+## Example exchanges
+
+The following are examples of NHACP request / response exchanges.
+In each column, the message starts with the message name, then the
+byte stream, including the frame length bytes, that comprises the
+example message being sent.  Double-quotes denote ASCII strings,
+which are used for readability.
+
+### Establishing an NHACP connection
+
+| Application | Network Adapter    |
+|-------------|--------------------|
+| START-NHACP |                    |
+| 0x8f        |                    |
+| "ACP"       |                    |
+| 0x01 0x00   |                    |
+|             | NHACP-STARTED      |
+|             | 0x14 0x00          |
+|             | 0x80               |
+|             | 0x01 0x00          |
+|             | 0x10               |
+|             | "NABU-ADAPTOR-1.1" |
+
+### Opening a 1KB file, reading 1KB of data, closing the file
+
+| Application         | Network Adapter      |
+|---------------------|----------------------|
+| STORAGE-OPEN        |                      |
+| 0x0f 0x00           |                      |
+| 0x01                |                      |
+| 0xff                |                      |
+| 0x00 0x00           |                      |
+| 0x0a                |                      |
+| "LEVEL1.DAT"        |                      |
+|                     | STORAGE-LOADED       |
+|                     | 0x06 0x00            |
+|                     | 0x83                 |
+|                     | 0x00                 |
+|                     | 0x00 0x04 0x00 0x00  |
+| STORAGE-GET         |                      |
+| 0x08 0x00           |                      |
+| 0x02                |                      |
+| 0x00                |                      |
+| 0x00 0x00 0x00 0x00 |                      |
+| 0x00 0x04           |                      |
+|                     | DATA-BUFFER          |
+|                     | 0x03 0x04            |
+|                     | 0x84                 |
+|                     | 0x00 0x04            |
+|                     | <1024 bytes of data> |
+| STORAGE-CLOSE       |                      |
+| 0x02 0x00           |                      |
+| 0x05                |                      |
+| 0x00                |                      |
+
+### Opening a file, error return, getting error details
+
+| Application       | Network Adapter                    |
+|-------------------|------------------------------------|
+| STORAGE-OPEN      |                                    |
+| 0x0a 0x00         |                                    |
+| 0x01              |                                    |
+| 0xff              |                                    |
+| 0x00 0x00         |                                    |
+| 0x05              |                                    |
+| "C.DSK"           |                                    |
+|                   | ERROR                              |
+|                   | 0x04 0x00                          |
+|                   | 0x82                               |
+|                   | 0x04 0x00                          |
+|                   | 0x00                               |
+| GET-ERROR-DETAILS |                                    |
+| 0x04 0x00         |                                    |
+| 0x06              |                                    |
+| 0x04 0x00         |                                    |
+| 0x40              |                                    |
+|                   | ERROR                              |
+|                   | 0x24 0x00                          |
+|                   | 0x82                               |
+|                   | 0x04 0x00                          |
+|                   | 0x20                               |
+|                   | "C.DSK: no such file or directory" |
