@@ -59,8 +59,10 @@ transmission unit, dictacted by the NABU hardware.  With the native
 tramission rate of 111860 bits per second and many network adapter
 implementations using 2 stop bits (for a total of 11 bits per byte),
 10169 bytes is the practical limit that can be transmitted within the
-allotted time.  For this reason, the maximum length of a message is
-8256 bytes.  This length was chosen for the following reasons:
+allotted time.
+
+The maximum length of an NHACP message is defined to be 8256 bytes.  This
+length was chosen for the following reasons:
 
 * It fits within the the one second time limit.
 * It is sufficient for an 8KB data payload plus request/response message
@@ -113,35 +115,36 @@ START-NHACP message with the following format:
 | magic   | char[3] | "ACP"                          |
 | version | u16     | Version number of the protocol |
 
-N.B. This request is send while the network adapter is in legacy mode and
+N.B. This request is sent while the network adapter is in legacy mode and
 thus DOES NOT use NHACP message framing.
 
 If the network adapter supports the new protocol, it will response with
-a PROTOCOL-STARTED response (see below) and will then wait for futher messages
+a NHACP-STARTED response (see below) and will then wait for futher messages
 in the new framing format.  If the client is using a protocol version greater
 than what the network adapter supports, the network adapter SHOULD ignore
-the message.
+the message and not enter NHACP mode.
 
 In the original draft of NHACP, the NABU application switched to the new
 protocol by sending a single byte 0xaf to the network adapter.  Unfortunately,
-there were two issues with this:
+there were two issues with this approach:
 
 * The message byte 0xaf later collided with a different NABU network adapter
-  protocol extension.
+  protocol extension and there was no simple way to distinguish between
+  the NHACP start-up message and message from the other protocol extension.
 * The message had no way to convey any protocol versioning information to
   the server.
 
 Due to its use of a multi-byte sequence, The new START-NHACP message is
-much less likely to collide with another message, and includes versioning
+much less likely to collide with another message and includes versioning
 information.
 
 Servers MAY wish to support the original 0xaf message type for NHACP; such
-a server MUST use the original framing mode if this message is used to start
-NHACP.
+a server MUST maintain compatibility with the original draft specification
+if this message is used to start NHACP.
 
 ## Protocol versioning
 
-The PROTOCOL-STARTED response contains a protocol version field.
+The NHACP-STARTED response contains a protocol version field.
 The initial version of that field was undefined and 0 by convention.
 This document describes version **0.1** of the protocol.  This
 section describes the changes between protocol revisions.  New
