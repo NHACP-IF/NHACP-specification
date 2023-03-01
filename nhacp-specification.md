@@ -113,6 +113,9 @@ START-NHACP message with the following format:
 | magic   | char[3] | "ACP"                          |
 | version | u16     | Version number of the protocol |
 
+N.B. This request is send while the network adapter is in legacy mode and
+thus DOES NOT use NHACP message framing.
+
 If the network adapter supports the new protocol, it will response with
 a PROTOCOL-STARTED response (see below) and will then wait for futher messages
 in the new framing format.  If the client is using a protocol version greater
@@ -153,6 +156,20 @@ explicitly here.
     * Defined new ERROR response behavior and GET-ERROR-DETAILS request.
     * Defined the new STORAGE-GET-BLOCK and STORAGE-PUT-BLOCK requests.
 * Version 0.0 - Initial version
+
+The protocol version field in the START-NHACP and NHACP-STARTED messages
+is a single 16-bit unsigned integer that encodes the protocol version in
+a way that is directly arithmetically comparable.  This is intended to
+make protocol version checking simple for the client.  As a convention,
+the "major" and "minor" versions of the protocol are kept in the most-
+significant and last-significant 8 bits of the version field, respectively.
+However, this is merely a convention and the version values defined here
+are authoritative:
+
+| Value  | Protocol version    |
+|--------|---------------------|
+| 0x0000 | initial NHACP draft |
+| 0x0001 | NHACP version 0.1   |
 
 ## Request messages
 
@@ -365,19 +382,6 @@ must be consecutive to support fast dispatching on the type byte.
 | version           | u16   | Version number of the protocol          |
 | adapter-id-length | u8    | Length of adapter identification string |
 | adapter-id        | char* | Adapter identification string           |
-
-The returned version is a single 16-bit unsigned integer that encodes
-the protocol version in a way that is directly arithmetically comparable.
-This is intended to make protocol version checking simple for the client.
-As a convention, the "major" and "minor" versions of the protocol are
-kept in the most-significant and last-significant 8 bits of the version
-field, respectively.  However, this is merely a convention and the
-version values defined here are authoritative:
-
-| Value  | Protocol version    |
-|--------|---------------------|
-| 0x0000 | initial NHACP draft |
-| 0x0001 | NHACP version 0.1   |
 
 ### OK
 
