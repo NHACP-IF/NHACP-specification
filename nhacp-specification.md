@@ -184,11 +184,9 @@ Possible responses: STORAGE-LOADED, ERROR
 
 Get data from network adapter storage.
 
-N.B. The maximum payload length that can be returned to the caller
-is the maximum message length (32767) _minus_ the size of the
-DATA-BUFFER reply message (3) (32767 - 3 -> 32764 bytes).  Servers
-SHOULD return an error for STORAGE-GET requests whose length field
-exceeds this value.
+The maximum payload langth for a STORAGE-GET is 8192 bytes.  Network
+adapters MUST return an error for STORAGE-GET requests whose length
+field exceeds this value.
 
 | Name   | Type | Notes                            |
 |--------|------|----------------------------------|
@@ -212,11 +210,9 @@ the end-of-file was encountered.
 Update data stored in the network adapter.  If possible, the
 underlying storage (file/URL) should be updated as well.
 
-N.B. The maximum payload length that can be sent to the server
-is the maximum message length (32767) _minus_ the size of the
-STORAGE-PUT request message (8) (32767 - 8 -> 32759 bytes).  Servers
-SHOULD return an error for STORAGE-PUT requests whose length field
-exceeds this value.
+The maximum payload langth for a STORAGE-PUT is 8192 bytes.  Network
+adapters MUST return an error for STORAGE-PUT requests whose length
+field exceeds this value.
 
 | Name   | Type | Notes                            |
 |--------|------|----------------------------------|
