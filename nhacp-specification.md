@@ -151,6 +151,7 @@ explicitly here.
     * Defined the new START-NHACP message.
     * Defined the initial set of error codes.
     * Defined new ERROR response behavior and GET-ERROR-DETAILS request.
+    * Defined the new STORAGE-GET-BLOCK and STORAGE-PUT-BLOCK requests.
 * Version 0.0 - Initial version
 
 ## Request messages
@@ -279,6 +280,64 @@ error returned to an application, or if the error code does not match
 the last remembered error code, then the network adapter MUST return
 a generic error description string for the error code in the request.
 In either case, any saved error code is cleared.
+
+### STORAGE-GET-BLOCK
+
+Get a block of data from network adapter storage.  This is an optimization
+of STORAGE-GET designed to support block-device storage.  Rather than a
+byte offset and length, a block number and block length is specified.  The
+byte offset into network adapter storage is computed by the network
+adapter as:
+
+	offset = block-number * block-length
+
+STORAGE-GET-BLOCK operates on atomic units; partial reads are not allowed.
+if the underlying storage object is not large enough to satisfy the entire
+request, the network adapter MUST return an error.
+
+The maximum payload langth for a STORAGE-GET-BLOCK is 8192 bytes.  Network
+adapters MUST return an error for STORAGE-GET-BLOCK requests whose block
+length field exceeds this value.
+
+| Name         | Type | Notes                            |
+|--------------|------|----------------------------------|
+| type         | u8   | 0x07                             |
+| index        | u8   | Storage slot to access           |
+| block-number | u32  | 0-based index of block to access |
+| block-length | u16  | Length of the block              |
+
+Possible responses: DATA-BUFFER, ERROR
+
+The length returned in the DATA-BUFFER response MUST equal
+the block size in the request.
+
+### STORAGE-PUT-BLOCK
+
+Put a block of data to network adapter storage.  This is an optimization
+of STORAGE-PUT designed to support block-device storage.  Rather than a
+byte offset and length, a block number and block length is specified.  The
+byte offset into network adapter storage is computed by the network
+adapter as:
+
+	offset = block-number * block-length
+
+STORAGE-PUT-BLOCK operates on atomic units; partial writes are not allowed,
+nor is extending the underlying storage object.  If the underlying storage
+object is not large enough to satisfy the entire request, the network adapter
+MUST return an error.
+
+The maximum payload langth for a STORAGE-PUT-BLOCK is 8192 bytes.  Network
+adapters MUST return an error for STORAGE-PUT-BLOCK requests whose block
+length field exceeds this value.
+
+| Name         | Type | Notes                            |
+|--------------|------|----------------------------------|
+| type         | u8   | 0x08                             |
+| index        | u8   | Storage slot to access           |
+| block-number | u32  | 0-based index of block to access |
+| block-length | u16  | Length of the block              |
+
+Possible responses: OK, ERROR
 
 ### END-PROTOCOL
 
