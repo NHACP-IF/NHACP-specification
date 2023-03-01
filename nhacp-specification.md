@@ -57,10 +57,10 @@ bytes indicated by the length field.  Because messages must be completely
 transmitted within one second, there is a hard ceiling on the maximum
 transmission unit, dictacted by the NABU hardware.  With the native
 tramission rate of 111860 bits per second and many network adapter
-implementations using 2 stop bits, 11186 bytes is the practical limit
-that can be transmitted within the allotted time.  For this reason, the
-maximum length of a message is 8256 bytes.  This length was chosen for
-the following reasons:
+implementations using 2 stop bits (for a total of 11 bits per byte),
+10169 bytes is the practical limit that can be transmitted within the
+allotted time.  For this reason, the maximum length of a message is
+8256 bytes.  This length was chosen for the following reasons:
 
 * It fits within the the one second time limit.
 * It is sufficient for an 8KB data payload plus request/response message
