@@ -195,9 +195,30 @@ MUST fail.
 |------------|-------|--------------------------------------------------------------------|
 | type       | u8    | 0x01                                                               |
 | index      | u8    | Storage slot to use for response (0xff => Network Adapter selects) |
-| flags      | u16   | Flags to pass to storage handler (TBD)                             |
+| flags      | u16   | Flags to pass to storage handler                                   |
 | url-length | u8    | Length of resource in bytes                                        |
 | url        | char* | URL String                                                         |
+
+The following flags are defined:
+
+| Name      | Value  | Notes                                      |
+|-----------|--------|--------------------------------------------|
+| O_RDRW    | 0x0000 | Psuedo-flag; open the file read-write      |
+| O_RDONLY  | 0x0001 | Open the file read-only                    |
+| O_CREAT   | 0x0002 | Create the file if it does not exist       |
+| O_EXCL    | 0x0004 | Return an error if the file already exists |
+
+All other flag values are reserved.
+
+Note that O_EXCL has no effect if O_CREAT is not specified in the
+request.
+
+If a storage object is opened with O_RDRW
+
+While NHACP-0.0 had a slot allocated in the STORAGE-OPEN request for flags,
+it did not define any flags.  Network adapters that support NHACP-0.0
+SHOULD ignore the flags field and assume O_RDRW+O_CREAT for connections
+in NHACP-0.0 mode.
 
 Possible responses: STORAGE-LOADED, ERROR
 
