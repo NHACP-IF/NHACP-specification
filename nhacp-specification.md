@@ -445,6 +445,7 @@ The following error codes are defined:
 | EFBIG     | 13    | File is too large             |
 | ENOSPC    | 14    | Out of space                  |
 | ESEEK     | 15    | Seek on non-seekable file     |
+| ENOTDIR   | 16    | File is not a directory       |
 
 All other error codes are reserved.
 
