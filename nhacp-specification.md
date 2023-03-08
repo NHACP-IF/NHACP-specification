@@ -159,6 +159,8 @@ explicitly here.
     * Defined the initial set of error codes.
     * Defined new ERROR response behavior and GET-ERROR-DETAILS request.
     * Defined the new STORAGE-GET-BLOCK and STORAGE-PUT-BLOCK requests.
+    * Defined the new DIR-LIST and DIR-GET-ENTRY requests and DIR-ENTRY
+      response.
 * Version 0.0 - Initial version
 
 The protocol version field in the START-NHACP and NHACP-STARTED messages
@@ -388,6 +390,46 @@ length field exceeds this value.
 
 Possible responses: OK, ERROR
 
+### DIR-LIST
+
+This request causes the network adapter to scan a directory for file names
+matching the specified pattern, retrieve the attributes of those files,
+and cache a list of those files to be retrieved one file at a time by future
+requests.  The directory must have already been opened.  Any cached listing
+is released upon a subsequent DIR-LIST or STORAGE-CLOSE request for that
+storage slot.
+
+| Name           | Type  | Notes                                   |
+|----------------|-------|-----------------------------------------|
+| type           | u8    | 0x0c                                    |
+| index          | u8    | Storage slot of directory to list       |
+| pattern-length | u8    | Legth of the file name matching pattern |
+| pattern        | char* | File name matching pattern              |
+
+Possible responses: OK, ERROR
+
+The network adapter SHOULD implement file name matching compatible with
+the IEEE Std 1003.2 for the glob() function.
+
+### DIR-GET-ENTRY
+
+Returns the next directory entry cached by a DIR-LIST request and
+advances the directory cursor.
+
+| Name            | Type  | Notes                                          |
+|-----------------|-------|------------------------------------------------|
+| type            | u8    | 0x0d                                           |
+| index           | u8    | Storage slot of directory that has been listed |
+| max-name-length | u8    | Maximum length of the returned file name       |
+
+Possible responses: OK, DIR-ENTRY, ERROR
+
+If there are no more entries to return, or if the listing has not been
+generated, the server MUST repond with OK to indicate the end-of-directory.
+
+The name of the file in the returned directory entry MUST be truncated to
+the max-name-length specifed by the application.
+
 ### END-PROTOCOL
 
 Return to legacy protocol processing, i.e. before returning to the
@@ -480,6 +522,30 @@ All other error codes are reserved.
 | type | u8      | 0x85                            |
 | date | char[8] | Current date in YYYYMMDD format |
 | time | char[6] | Current time in HHMMSS format   |
+
+### DIR-ENTRY
+
+| Name        | Type    | Notes                                     |
+|-------------|---------|-------------------------------------------|
+| type        | u8      | 0x86                                      |
+| mtime_date  | char[8] | File modification date in YYYYMMDD format |
+| mtime_time  | char[6] | File modification time in HHMMSS format   |
+| attr-flags  | u16     | File attribute flags                      |
+| file-size   | u32     | File size                                 |
+| name-length | u8      | Length of returned file name              |
+| name        | char*   | File name                                 |
+
+The following file attribute flags are defined.  All other flags are
+reserved.
+
+| Name | Value  | Notes                         |
+|------|--------|-------------------------------|
+| RD   | 0x0001 | File is readable              |
+| WR   | 0x0002 | File is writable              |
+| DIR  | 0x0004 | File is a directory           |
+| SPEC | 0x0008 | File is a "special" file      |
+
+A "special" file is a file that is not a regular file nor a directory.
 
 ## Recovering from a crash
 
