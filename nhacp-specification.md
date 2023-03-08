@@ -114,6 +114,7 @@ START-NHACP message with the following format:
 | type    | u8      | 0x8f                           |
 | magic   | char[3] | "ACP"                          |
 | version | u16     | Version number of the protocol |
+| options | u16     | Protocol options               |
 
 N.B. This request is sent while the network adapter is in legacy mode and
 thus DOES NOT use NHACP message framing.
@@ -173,6 +174,13 @@ are authoritative:
 |--------|---------------------|
 | 0x0000 | initial NHACP draft |
 | 0x0001 | NHACP version 0.1   |
+
+## Protocol options
+
+At this time, there are no protocol options defined.  All bits in the
+START-NHACP options field are reserved for future use.  Network adapters
+MUST ignore a START-NHACP request that specifies a protocol option not
+supported by the network adapter.
 
 ## Request messages
 
