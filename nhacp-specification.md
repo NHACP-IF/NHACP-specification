@@ -159,6 +159,10 @@ explicitly here.
     * Defined the initial set of error codes.
     * Defined new ERROR response behavior and GET-ERROR-DETAILS request.
     * Defined the new STORAGE-GET-BLOCK and STORAGE-PUT-BLOCK requests.
+    * Added section about complex aggregate types, and added definitions
+      for the DATE-TIME structure and the FILE-ATTRS structure.
+    * Redefined the DATE-TIME response message to use the DATE-TIME structure.
+      Layout of the message is backwards-compatible.
     * Defined the new DIR-LIST and DIR-GET-ENTRY requests and DIR-ENTRY
       response.
 * Version 0.0 - Initial version
@@ -183,6 +187,39 @@ At this time, there are no protocol options defined.  All bits in the
 START-NHACP options field are reserved for future use.  Network adapters
 MUST ignore a START-NHACP request that specifies a protocol option not
 supported by the network adapter.
+
+## Complex aggregate types
+
+In addition to the simple scalar types (u8, u16, u32) and simple aggregate
+types (char/byte arrays), there are some complex aggregate types used in
+NHACP that are shared by multiple request/response messages.
+
+### DATE-TIME structure
+
+| Name | Type    | Notes                           |
+|------|---------|---------------------------------|
+| date | char[8] | Current date in YYYYMMDD format |
+| time | char[6] | Current time in HHMMSS format   |
+
+### FILE-ATTRS structure
+
+| Name      | Type      | Notes                       |
+|-----------|-----------|-----------------------------|
+| mtime     | DATE-TIME | Last file modification time |
+| flags     | u16       | File attribute flags        |
+| file-size | u32       | File size                   |
+
+The following file attribute flags are defined.  All other flags are
+reserved.
+
+| Name | Value  | Notes                    |
+|------|--------|--------------------------|
+| RD   | 0x0001 | File is readable         |
+| WR   | 0x0002 | File is writable         |
+| DIR  | 0x0004 | File is a directory      |
+| SPEC | 0x0008 | File is a "special" file |
+
+A "special" file is a file that is not a regular file nor a directory.
 
 ## Request messages
 
@@ -517,35 +554,19 @@ All other error codes are reserved.
 
 ### DATE-TIME
 
-| Name | Type    | Notes                           |
-|------|---------|---------------------------------|
-| type | u8      | 0x85                            |
-| date | char[8] | Current date in YYYYMMDD format |
-| time | char[6] | Current time in HHMMSS format   |
+| Name      | Type      | Notes                 |
+|-----------|-----------|-----------------------|
+| type      | u8        | 0x85                  |
+| date_time | DATE-TIME | Current date and time |
 
 ### DIR-ENTRY
 
-| Name        | Type    | Notes                                     |
-|-------------|---------|-------------------------------------------|
-| type        | u8      | 0x86                                      |
-| mtime_date  | char[8] | File modification date in YYYYMMDD format |
-| mtime_time  | char[6] | File modification time in HHMMSS format   |
-| attr-flags  | u16     | File attribute flags                      |
-| file-size   | u32     | File size                                 |
-| name-length | u8      | Length of returned file name              |
-| name        | char*   | File name                                 |
-
-The following file attribute flags are defined.  All other flags are
-reserved.
-
-| Name | Value  | Notes                         |
-|------|--------|-------------------------------|
-| RD   | 0x0001 | File is readable              |
-| WR   | 0x0002 | File is writable              |
-| DIR  | 0x0004 | File is a directory           |
-| SPEC | 0x0008 | File is a "special" file      |
-
-A "special" file is a file that is not a regular file nor a directory.
+| Name        | Type       | Notes                        |
+|-------------|------------|------------------------------|
+| type        | u8         | 0x86                         |
+| attrs       | FILE-ATTRS | File attributes              |
+| name-length | u8         | Length of returned file name |
+| name        | char*      | File name                    |
 
 ## Recovering from a crash
 
