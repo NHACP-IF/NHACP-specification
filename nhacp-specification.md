@@ -165,6 +165,8 @@ explicitly here.
       Layout of the message is backwards-compatible.
     * Defined the new LIST-DIR and GET-DIR-ENTRY requests and DIR-ENTRY
       response.
+    * Renamed STORAGE-CLOSE to FILE-CLOSE.  The semantics of the operation
+      are unchanged.
 * Version 0.0 - Initial version
 
 The protocol version field in the START-NHACP and NHACP-STARTED messages
@@ -333,7 +335,7 @@ Retrieve the current date and time from the network adapter.
 
 Possible responses: DATE-TIME, ERROR
 
-### STORAGE-CLOSE
+### FILE-CLOSE
 
 Close a previously opened storage slot.  Any resources associated with
 it on the network adapter will be freed.
@@ -433,7 +435,7 @@ This request causes the network adapter to scan a directory for file names
 matching the specified pattern, retrieve the attributes of those files,
 and cache a list of those files to be retrieved one file at a time by future
 requests.  The directory must have already been opened.  Any cached listing
-is released upon a subsequent LIST-DIR or STORAGE-CLOSE request for that
+is released upon a subsequent LIST-DIR or FILE-CLOSE request for that
 storage slot.
 
 | Name           | Type  | Notes                                   |
@@ -627,7 +629,7 @@ which are used for readability.
 |                     | 0x84                 |
 |                     | 0x00 0x04            |
 |                     | <1024 bytes of data> |
-| STORAGE-CLOSE       |                      |
+| FILE-CLOSE          |                      |
 | 0x02 0x00           |                      |
 | 0x05                |                      |
 | 0x00                |                      |
