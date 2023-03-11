@@ -163,6 +163,8 @@ explicitly here.
       for the DATE-TIME structure and the FILE-ATTRS structure.
     * Redefined the DATE-TIME response message to use the DATE-TIME structure.
       Layout of the message is backwards-compatible.
+    * Defined the new UINT8-VALUE, UINT16-VALUE, and UINT32-VALUE responses.
+    * Defined the new FILE-READ, FILE-WRITE, and FILE-SEEK requests.
     * Defined the new LIST-DIR and GET-DIR-ENTRY requests and DIR-ENTRY
       response.
     * Renamed STORAGE-CLOSE to FILE-CLOSE.  The semantics of the operation
@@ -237,7 +239,7 @@ the protocol itself.
 The network adapter will attempt to use the file descriptor specified by
 the caller unless the caller specifies 0xff, in which case the network
 adapter will attempt to allocate a file descriptor.  If the requested
-file descriptor is already in-use by another storage object, the STORAGE-OPEN
+file descriptor is already in-use by another file object, the STORAGE-OPEN
 request MUST fail.
 
 | Name       | Type  | Notes                                                                 |
@@ -261,8 +263,6 @@ All other flag values are reserved.
 
 Note that O_EXCL has no effect if O_CREAT is not specified in the
 request.
-
-If a storage object is opened with O_RDRW
 
 While NHACP-0.0 had a slot allocated in the STORAGE-OPEN request for flags,
 it did not define any flags.  Network adapters that support NHACP-0.0
@@ -290,11 +290,14 @@ Possible responses: DATA-BUFFER, ERROR
 
 The length returned in the DATA-BUFFER response reflects
 the amount of data actuallty read from the underlying
-storage object.  If the offset is beyond the object's
+file object.  If the offset is beyond the object's
 end-of-file, then the returned length MUST be 0.
 If the read operation would cross the object's end-of-file,
 then the length MUST be the number of bytes read before
 the end-of-file was encountered.
+
+If the underlying file object cannot be accessed at arbitrary offsets,
+then STORAGE-GET MUST fail with an ESEEK error.
 
 ### STORAGE-PUT
 
@@ -315,15 +318,18 @@ field exceeds this value.
 
 Possible responses: OK, ERROR
 
-If a write originates at or beyond the underlying storage
+If a write originates at or beyond the underlying file
 object's end-of-file or therwise crosses the end-of-file,
-then the underlying storage object SHOULD be implicitly
+then the underlying file object SHOULD be implicitly
 enlarged to accommodate the write.  For writes that originate
 beyond end-of-file, the region between the old end-of-file and
 the newly-written region MUST be implicitly zero-filled.  If
 a server implementation does not support extending the underlying
-storage object, then the server MUST return an error without
+file object, then the server MUST return an error without
 performing the write operation.
+
+If the underlying file object cannot be accessed at arbitrary offsets,
+then STORAGE-PUT MUST fail with an ESEEK error.
 
 ### GET-DATE-TIME
 
@@ -382,7 +388,7 @@ adapter as:
 	offset = block-number * block-length
 
 STORAGE-GET-BLOCK operates on atomic units; partial reads are not allowed.
-if the underlying storage object is not large enough to satisfy the entire
+if the underlying file object is not large enough to satisfy the entire
 request, the network adapter MUST return an error.
 
 The maximum payload langth for a STORAGE-GET-BLOCK is 8192 bytes.  Network
@@ -401,6 +407,9 @@ Possible responses: DATA-BUFFER, ERROR
 The length returned in the DATA-BUFFER response MUST equal
 the block size in the request.
 
+If the underlying file object cannot be accessed at arbitrary offsets,
+then STORAGE-GET-BLOCK MUST fail with an ESEEK error.
+
 ### STORAGE-PUT-BLOCK
 
 Put a block of data to network adapter storage.  This is an optimization
@@ -412,7 +421,7 @@ adapter as:
 	offset = block-number * block-length
 
 STORAGE-PUT-BLOCK operates on atomic units; partial writes are not allowed,
-nor is extending the underlying storage object.  If the underlying storage
+nor is extending the underlying file object.  If the underlying file
 object is not large enough to satisfy the entire request, the network adapter
 MUST return an error.
 
@@ -428,6 +437,96 @@ length field exceeds this value.
 | block-length | u16  | Length of the block              |
 
 Possible responses: OK, ERROR
+
+If the underlying file object cannot be accessed at arbitrary offsets,
+then STORAGE-PUT-BLOCK MUST fail with an ESEEK error.
+
+### FILE-READ
+
+Read data sequentially from network adapter storage.
+
+The maximum payload langth for a FILE-READ is 8192 bytes.  Network
+adapters MUST return an error for FILE-READ requests whose length
+field exceeds this value.
+
+| Name   | Type | Notes                            |
+|--------|------|----------------------------------|
+| type   | u8   | 0x09                             |
+| index  | u8   | File descriptor to access        |
+| flags  | u16  | Flags                            |
+| length | u16  | Number of bytes to return        |
+
+Possible responses: DATA-BUFFER, ERROR
+
+There are no flags currently defined for FILE-READ; all values are
+reserved.
+
+The length returned in the DATA-BUFFER response reflects
+the amount of data actuallty read from the underlying
+file object.  If the file cursor is beyond the object's
+end-of-file, then the returned length MUST be 0.
+If the read operation would cross the object's end-of-file,
+then the length MUST be the number of bytes read before
+the end-of-file was encountered.
+
+### FILE-WRITE
+
+Perform a sequential write to update data stored in the network adapter.
+If possible, the underlying storage (file/URL) should be updated as well.
+
+The maximum payload langth for a FILE-WRITE is 8192 bytes.  Network
+adapters MUST return an error for FILE-WRITE requests whose length
+field exceeds this value.
+
+| Name   | Type | Notes                            |
+|--------|------|----------------------------------|
+| type   | u8   | 0x0a                             |
+| index  | u8   | File descriptor to access        |
+| flags  | u16  | Flags                            |
+| length | u16  | Number of bytes to write         |
+| data   | u8*  | Data to update the storage with  |
+
+Possible responses: OK, ERROR
+
+There are no flags currently defined for FILE-WRITE; all values are
+reserved.
+
+If the position of the file cursor causes the write to originate at or
+beyond the underlying file object's end-of-file or therwise crosses
+the end-of-file, then the underlying file object SHOULD be implicitly
+enlarged to accommodate the write.  For writes that originate beyond
+end-of-file, the region between the old end-of-file and the newly-written
+region MUST be implicitly zero-filled.  If a server implementation does
+not support extending the underlying storage object, then the server MUST
+return an error without performing the write operation.
+
+### FILE-SEEK
+
+Re-position the file cursor by a signed offset relative to the specified
+seek origin.
+
+| Name   | Type | Notes                            |
+|--------|------|----------------------------------|
+| type   | u8   | 0x0b                             |
+| index  | u8   | File descriptor to access        |
+| offset | s32  | Offset relative to seek origin   |
+| whence | u8   | The origin of the seek           |
+
+The following whence values are defined:
+
+| Name      | Value | Notes                                                    |
+|-----------|-------|----------------------------------------------------------|
+| SEEK_SET  | 0x00  | Set the cursor to offset bytes.                          |
+| SEEK_CUR  | 0x01  | Set the cursor to the current location plus offset bytes |
+| SEEK_END  | 0x02  | Set the cursor to the size of the file plus offset bytes |
+
+Once the cursor has been repositioned, FILE-SEEK returns the resulting offset
+measured in bytes from the beginning of the file.
+
+If the underlying file object does not have a cursor that can be respositioned,
+then FILE-SEEK MUST fail with an ESEEK error.
+
+Possible responses: UINT32-VALUE, ERROR
 
 ### LIST-DIR
 
@@ -569,6 +668,27 @@ All other error codes are reserved.
 | attrs       | FILE-ATTRS | File attributes              |
 | name-length | u8         | Length of returned file name |
 | name        | char*      | File name                    |
+
+### UINT8-VALUE
+
+| Name  | Type | Notes               |
+|-------|------|---------------------|
+| type  | u8   | 0x87                |
+| value | u8   | Generic 8-bit value |
+
+### UINT16-VALUE
+
+| Name  | Type | Notes                |
+|-------|------|----------------------|
+| type  | u8   | 0x88                 |
+| value | u16  | Generic 16-bit value |
+
+### UINT32-VALUE
+
+| Name  | Type | Notes                |
+|-------|------|----------------------|
+| type  | u8   | 0x89                 |
+| value | u32  | Generic 32-bit value |
 
 ## Recovering from a crash
 
