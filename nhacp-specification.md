@@ -234,19 +234,19 @@ as files.  The flags field can be used to pass additional information
 to the storage handler.  The meaning of the flags is not specified in
 the protocol itself.
 
-The network adapter will attempt to use the storage slot specified by
+The network adapter will attempt to use the file descriptor specified by
 the caller unless the caller specifies 0xff, in which case the network
-adapter will attempt to allocate a storage slot.  If the requested slot
-is already in-use by another storage object, the STORAGE-OPEN request
-MUST fail.
+adapter will attempt to allocate a file descriptor.  If the requested
+file descriptor is already in-use by another storage object, the STORAGE-OPEN
+request MUST fail.
 
-| Name       | Type  | Notes                                                              |
-|------------|-------|--------------------------------------------------------------------|
-| type       | u8    | 0x01                                                               |
-| index      | u8    | Storage slot to use for response (0xff => Network Adapter selects) |
-| flags      | u16   | Flags to pass to storage handler                                   |
-| url-length | u8    | Length of resource in bytes                                        |
-| url        | char* | URL String                                                         |
+| Name       | Type  | Notes                                                                 |
+|------------|-------|-----------------------------------------------------------------------|
+| type       | u8    | 0x01                                                                  |
+| index      | u8    | File descriptor to use for response (0xff => Network Adapter selects) |
+| flags      | u16   | Flags to pass to storage handler                                      |
+| url-length | u8    | Length of resource in bytes                                           |
+| url        | char* | URL String                                                            |
 
 The following flags are defined:
 
@@ -282,7 +282,7 @@ field exceeds this value.
 | Name   | Type | Notes                            |
 |--------|------|----------------------------------|
 | type   | u8   | 0x02                             |
-| index  | u8   | Storage slot to access           |
+| index  | u8   | File descriptor to access        |
 | offset | u32  | Offset into the storage in bytes |
 | length | u16  | Number of bytes to return        |
 
@@ -308,7 +308,7 @@ field exceeds this value.
 | Name   | Type | Notes                            |
 |--------|------|----------------------------------|
 | type   | u8   | 0x03                             |
-| index  | u8   | Storage slot to access           |
+| index  | u8   | File descriptor to access        |
 | offset | u32  | Offset into the storage in bytes |
 | length | u16  | Number of bytes to write         |
 | data   | u8*  | Data to update the storage with  |
@@ -337,17 +337,17 @@ Possible responses: DATE-TIME, ERROR
 
 ### FILE-CLOSE
 
-Close a previously opened storage slot.  Any resources associated with
+Close a previously opened file descriptor.  Any resources associated with
 it on the network adapter will be freed.
 
-| Name  | Type | Notes                 |
-|-------|------|-----------------------|
-| type  | u8   | 0x05                  |
-| index | u8   | Storage slot to close |
+| Name  | Type | Notes                    |
+|-------|------|--------------------------|
+| type  | u8   | 0x05                     |
+| index | u8   | File descriptor to close |
 
 No response message is returned by the network adapter.  If the server
-receives a slot that is not currently in use by the client, the request
-is simply ignored.
+receives a file descriptor that is not currently in use by the client,
+the request is simply ignored.
 
 ### GET-ERROR-DETAILS
 
@@ -392,7 +392,7 @@ length field exceeds this value.
 | Name         | Type | Notes                            |
 |--------------|------|----------------------------------|
 | type         | u8   | 0x07                             |
-| index        | u8   | Storage slot to access           |
+| index        | u8   | File descriptor to access        |
 | block-number | u32  | 0-based index of block to access |
 | block-length | u16  | Length of the block              |
 
@@ -423,7 +423,7 @@ length field exceeds this value.
 | Name         | Type | Notes                            |
 |--------------|------|----------------------------------|
 | type         | u8   | 0x08                             |
-| index        | u8   | Storage slot to access           |
+| index        | u8   | File descriptor to access        |
 | block-number | u32  | 0-based index of block to access |
 | block-length | u16  | Length of the block              |
 
@@ -436,12 +436,12 @@ matching the specified pattern, retrieve the attributes of those files,
 and cache a list of those files to be retrieved one file at a time by future
 requests.  The directory must have already been opened.  Any cached listing
 is released upon a subsequent LIST-DIR or FILE-CLOSE request for that
-storage slot.
+file descriptor.
 
 | Name           | Type  | Notes                                   |
 |----------------|-------|-----------------------------------------|
 | type           | u8    | 0x0c                                    |
-| index          | u8    | Storage slot of directory to list       |
+| index          | u8    | File descriptor of directory to list    |
 | pattern-length | u8    | Legth of the file name matching pattern |
 | pattern        | char* | File name matching pattern              |
 
@@ -455,11 +455,11 @@ the IEEE Std 1003.2 for the glob() function.
 Returns the next directory entry cached by a LIST-DIR request and
 advances the directory cursor.
 
-| Name            | Type  | Notes                                          |
-|-----------------|-------|------------------------------------------------|
-| type            | u8    | 0x0d                                           |
-| index           | u8    | Storage slot of directory that has been listed |
-| max-name-length | u8    | Maximum length of the returned file name       |
+| Name            | Type  | Notes                                             |
+|-----------------|-------|---------------------------------------------------|
+| type            | u8    | 0x0d                                              |
+| index           | u8    | File descriptor of directory that has been listed |
+| max-name-length | u8    | Maximum length of the returned file name          |
 
 Possible responses: OK, DIR-ENTRY, ERROR
 
