@@ -163,7 +163,7 @@ explicitly here.
       for the DATE-TIME structure and the FILE-ATTRS structure.
     * Redefined the DATE-TIME response message to use the DATE-TIME structure.
       Layout of the message is backwards-compatible.
-    * Defined the new DIR-LIST and DIR-GET-ENTRY requests and DIR-ENTRY
+    * Defined the new LIST-DIR and GET-DIR-ENTRY requests and DIR-ENTRY
       response.
 * Version 0.0 - Initial version
 
@@ -427,13 +427,13 @@ length field exceeds this value.
 
 Possible responses: OK, ERROR
 
-### DIR-LIST
+### LIST-DIR
 
 This request causes the network adapter to scan a directory for file names
 matching the specified pattern, retrieve the attributes of those files,
 and cache a list of those files to be retrieved one file at a time by future
 requests.  The directory must have already been opened.  Any cached listing
-is released upon a subsequent DIR-LIST or STORAGE-CLOSE request for that
+is released upon a subsequent LIST-DIR or STORAGE-CLOSE request for that
 storage slot.
 
 | Name           | Type  | Notes                                   |
@@ -448,9 +448,9 @@ Possible responses: OK, ERROR
 The network adapter SHOULD implement file name matching compatible with
 the IEEE Std 1003.2 for the glob() function.
 
-### DIR-GET-ENTRY
+### GET-DIR-ENTRY
 
-Returns the next directory entry cached by a DIR-LIST request and
+Returns the next directory entry cached by a LIST-DIR request and
 advances the directory cursor.
 
 | Name            | Type  | Notes                                          |
