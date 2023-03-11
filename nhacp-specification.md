@@ -443,7 +443,7 @@ then STORAGE-PUT-BLOCK MUST fail with an ESEEK error.
 
 ### FILE-READ
 
-Read data sequentially from network adapter storage.
+Read data sequentially from a file descriptor.
 
 The maximum payload langth for a FILE-READ is 8192 bytes.  Network
 adapters MUST return an error for FILE-READ requests whose length
@@ -471,8 +471,8 @@ the end-of-file was encountered.
 
 ### FILE-WRITE
 
-Perform a sequential write to update data stored in the network adapter.
-If possible, the underlying storage (file/URL) should be updated as well.
+Perform a sequential write to a file descriptor.  If possible, the
+underlying storage (file/URL) should be updated as well.
 
 The maximum payload langth for a FILE-WRITE is 8192 bytes.  Network
 adapters MUST return an error for FILE-WRITE requests whose length
