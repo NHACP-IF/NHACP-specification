@@ -603,12 +603,12 @@ must be consecutive to support fast dispatching on the type byte.
 
 ### ERROR
 
-| Name           | Type      | Notes                   |
-|----------------|-----------|-------------------------|
-| type           | u8        | 0x82                    |
-| code           | u16       | Error code              |
-| message-length | u8        | Length of error message |
-| message        | char[255] | Error message           |
+| Name           | Type  | Notes                   |
+|----------------|-------|-------------------------|
+| type           | u8    | 0x82                    |
+| code           | u16   | Error code              |
+| message-length | u8    | Length of error message |
+| message        | char* | Error message           |
 
 Note that for all requests other than GET-ERROR-DETAILS, the
 message-length field will be 0.
