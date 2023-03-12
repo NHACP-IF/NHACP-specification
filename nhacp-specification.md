@@ -190,7 +190,7 @@ explicitly here.
       response.
     * Renamed STORAGE-CLOSE to FILE-CLOSE.  The semantics of the operation
       are unchanged.
-    * Added the optional CRC-8/WCDMA error detection option.
+    * Added the optional CRC-8/WCDMA error detection.
 * Version 0.0 - Initial version
 
 The protocol version field in the START-NHACP and NHACP-STARTED messages
