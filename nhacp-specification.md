@@ -71,9 +71,20 @@ length was chosen for the following reasons:
   significant bit of the length field is never set, which aids in crash
   recovery (see below).
 
+Additional error detection features may be enabled when an NHACP session
+is established using the options field in the START-NHACP message.  If
+the CRC8 option is enabled in START-NHACP, then all NHACP messages will
+have a 1-byte CRC-8/WCDMA appended to the end of the frame.  This byte
+MUST be included in the length field of the message, and the length field
+MUST be included in the CRC calculation.  If the CRC field is zero, then
+then the CRC was not computed and the packet MUST NOT be rejected by the
+receiver due to a CRC failure.  If CRC error detection is enabled, the
+network adapter MUST compute the CRC for frames sent to the adapter to the
+receiver.  Client applications MAY choose to ignore CRC at any time.
+
 No further framing is provided.  The receiver should ignore partial
-messages and signal an error to the operator if it detects the timeout
-condition.
+or corrupted (if checked) messages and signal an error to the operator
+if it detects the timeout condition.
 
 ## Message type
 
@@ -118,6 +129,16 @@ START-NHACP message with the following format:
 
 N.B. This request is sent while the network adapter is in legacy mode and
 thus DOES NOT use NHACP message framing.
+
+The following options are defined:
+
+| Name | Value  | Notes                              |
+|------|--------|------------------------------------|
+| CRC8 | 0x0001 | Enable CRC-8/WCDMA error detection |
+
+All other option bits are reserved.  If a network adapter does not recognize
+or support any of the specified options, then the network adapter MUST
+ignore the message and not enter NHACP mode.
 
 If the network adapter supports the new protocol, it will response with
 a NHACP-STARTED response (see below) and will then wait for futher messages
@@ -169,6 +190,7 @@ explicitly here.
       response.
     * Renamed STORAGE-CLOSE to FILE-CLOSE.  The semantics of the operation
       are unchanged.
+    * Added the optional CRC-8/WCDMA error detection option.
 * Version 0.0 - Initial version
 
 The protocol version field in the START-NHACP and NHACP-STARTED messages
@@ -782,3 +804,12 @@ which are used for readability.
 |                   | 0x04 0x00                          |
 |                   | 0x20                               |
 |                   | "C.DSK: no such file or directory" |
+
+### CRC-8/WCDMA Test Vectors
+
+* "The quick brown fox jumps over the lazy dog."
+    * Length: 44
+    * CRC: 0xfd
+* "NABU HCCA application communication protocol"
+    * Length: 44
+    * CRC: 0xe7
