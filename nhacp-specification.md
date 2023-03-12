@@ -79,8 +79,8 @@ MUST be included in the length field of the message, and the length field
 MUST be included in the CRC calculation.  If the CRC field is zero, then
 then the CRC was not computed and the packet MUST NOT be rejected by the
 receiver due to a CRC failure.  If CRC error detection is enabled, the
-network adapter MUST compute the CRC for frames sent to the adapter to the
-receiver.  Client applications MAY choose to ignore CRC at any time.
+network adapter MUST compute the CRC for frames sent to the receiver.
+Client applications MAY choose to ignore CRC at any time.
 
 No further framing is provided.  The receiver should ignore partial
 or corrupted (if checked) messages and signal an error to the operator
