@@ -715,6 +715,7 @@ which are used for readability.
 | 0x8f        |                    |
 | "ACP"       |                    |
 | 0x01 0x00   |                    |
+| 0x00 0x00   |                    |
 |             | NHACP-STARTED      |
 |             | 0x14 0x00          |
 |             | 0x80               |
