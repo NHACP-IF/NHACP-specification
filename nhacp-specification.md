@@ -409,9 +409,9 @@ adapter as:
 
 	offset = block-number * block-length
 
-STORAGE-GET-BLOCK operates on atomic units; partial reads are not allowed.
-if the underlying file object is not large enough to satisfy the entire
-request, the network adapter MUST return an error.
+STORAGE-GET-BLOCK operates on atomic units; partial reads MUST be zero-padded
+to the block size.  Reads that originate beyond the eof-of-file MUST result
+in 0 bytes being returned.
 
 The maximum payload langth for a STORAGE-GET-BLOCK is 8192 bytes.  Network
 adapters MUST return an error for STORAGE-GET-BLOCK requests whose block
@@ -426,8 +426,8 @@ length field exceeds this value.
 
 Possible responses: DATA-BUFFER, ERROR
 
-The length returned in the DATA-BUFFER response MUST equal
-the block size in the request.
+The length returned in the DATA-BUFFER response MUST equal the block size
+in the request.
 
 If the underlying file object cannot be accessed at arbitrary offsets,
 then STORAGE-GET-BLOCK MUST fail with an ESEEK error.
@@ -442,11 +442,6 @@ adapter as:
 
 	offset = block-number * block-length
 
-STORAGE-PUT-BLOCK operates on atomic units; partial writes are not allowed,
-nor is extending the underlying file object.  If the underlying file
-object is not large enough to satisfy the entire request, the network adapter
-MUST return an error.
-
 The maximum payload langth for a STORAGE-PUT-BLOCK is 8192 bytes.  Network
 adapters MUST return an error for STORAGE-PUT-BLOCK requests whose block
 length field exceeds this value.
@@ -459,6 +454,16 @@ length field exceeds this value.
 | block-length | u16  | Length of the block              |
 
 Possible responses: OK, ERROR
+
+If a write originates at or beyond the underlying file
+object's end-of-file or therwise crosses the end-of-file,
+then the underlying file object SHOULD be implicitly
+enlarged to accommodate the write.  For writes that originate
+beyond end-of-file, the region between the old end-of-file and
+the newly-written region MUST be implicitly zero-filled.  If
+a server implementation does not support extending the underlying
+file object, then the server MUST return an error without
+performing the write operation.
 
 If the underlying file object cannot be accessed at arbitrary offsets,
 then STORAGE-PUT-BLOCK MUST fail with an ESEEK error.
