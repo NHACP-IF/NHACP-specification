@@ -86,6 +86,16 @@ No further framing is provided.  The receiver should ignore partial
 or corrupted (if checked) messages and signal an error to the operator
 if it detects the timeout condition.
 
+A conforming NHACP server MUST obey the following rules when receiving
+and sending messages:
+
+* When receiving requests, extra bytes sent by the client application
+  beyond the request arguments MUST be ignored by the server.  If the
+  client does send extra bytes, they MUST be included in the frame length
+  and any CRC computation.
+* When sending responses to the client application, the server MUST NOT
+  send any extra bytes beyond those required to respond to the request.
+
 ## Message type
 
 The first field of each message is a 1 byte message type.  Request
