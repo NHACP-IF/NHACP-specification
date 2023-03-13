@@ -410,7 +410,7 @@ adapter as:
 	offset = block-number * block-length
 
 STORAGE-GET-BLOCK operates on atomic units; partial reads MUST be zero-padded
-to the block size.  Reads that originate beyond the eof-of-file MUST result
+to the block size.  Reads that originate beyond the end-of-file MUST result
 in 0 bytes being returned.
 
 The maximum payload langth for a STORAGE-GET-BLOCK is 8192 bytes.  Network
