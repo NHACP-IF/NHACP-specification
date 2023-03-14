@@ -286,7 +286,7 @@ The following flags are defined:
 
 | Name      | Value  | Notes                                      |
 |-----------|--------|--------------------------------------------|
-| O_RDRW    | 0x0000 | Psuedo-flag; open the file read-write      |
+| O_RDWR    | 0x0000 | Psuedo-flag; open the file read-write      |
 | O_RDONLY  | 0x0001 | Open the file read-only                    |
 | O_CREAT   | 0x0002 | Create the file if it does not exist       |
 | O_EXCL    | 0x0004 | Return an error if the file already exists |
@@ -298,8 +298,35 @@ request.
 
 While NHACP-0.0 had a slot allocated in the STORAGE-OPEN request for flags,
 it did not define any flags.  Network adapters that support NHACP-0.0
-SHOULD ignore the flags field and assume O_RDRW+O_CREAT for connections
+SHOULD ignore the flags field and assume O_RDWR+O_CREAT for connections
 in NHACP-0.0 mode.
+
+There are some considerations around a file object's attributes that need
+to be considered that impact client-visible file behavior:
+
+* Seekability - whether or not the underlying file object can be accessed
+  at arbitrary offsets on a per-requeset basis.  Several file access requests
+  require a file to be "seekable".
+* Writability - whether or not the underlying file object can be modified.
+  If an application opens a file with the O_RDWR flag, it expects to
+  modify the file.
+
+Some latitude is afforded to network adapter implementations in how they
+might wish to handle these attributes in the face of requests from client
+applications that are in conflict with them.
+
+* If the underlying file object being opened is a regular file but is
+  _not_ seekable (e.g. is a remote file being accessed over HTTP), then
+  the network adapter SHOULD download a temporary copy to local storage
+  in order to provide random access to that file object.  If this behavior
+  is not implemented by the network adapter then any positional I/O request
+  MUST return an ERROR response with the error code set to ESEEK.
+* If the underlying file object being opened is not writable but the
+  client application has opened with O_RDWR, then the network adapter
+  MAY create a temporary local copy in local storage that can be modified
+  by the client application.  If this behavior is not implemented by
+  the network adapter then the STORAGE-OPEN call MUST return an ERROR
+  response with the error code set to EACCES.
 
 Possible responses: STORAGE-LOADED, ERROR
 
@@ -360,8 +387,13 @@ a server implementation does not support extending the underlying
 file object, then the server MUST return an error without
 performing the write operation.
 
-If the underlying file object cannot be accessed at arbitrary offsets,
-then STORAGE-PUT MUST fail with an ESEEK error.
+Errors are returned with the following priority:
+
+* If the underlying file object is not writable, then STORAGE-PUT MUST
+  fail with an EBADF error.
+* If the underlying file object cannot be accessed at arbitrary offsets,
+  then STORAGE-PUT MUST fail with an ESEEK error.
+* Other implementation-defined error conditions.
 
 ### GET-DATE-TIME
 
@@ -475,8 +507,13 @@ a server implementation does not support extending the underlying
 file object, then the server MUST return an error without
 performing the write operation.
 
-If the underlying file object cannot be accessed at arbitrary offsets,
-then STORAGE-PUT-BLOCK MUST fail with an ESEEK error.
+Errors are returned with the following priority:
+
+* If the underlying file object is not writable, then STORAGE-PUT-BLOCK MUST
+  fail with an EBADF error.
+* If the underlying file object cannot be accessed at arbitrary offsets,
+  then STORAGE-PUT-BLOCK MUST fail with an ESEEK error.
+* Other implementation-defined error conditions.
 
 ### FILE-READ
 
@@ -536,6 +573,12 @@ end-of-file, the region between the old end-of-file and the newly-written
 region MUST be implicitly zero-filled.  If a server implementation does
 not support extending the underlying storage object, then the server MUST
 return an error without performing the write operation.
+
+Errors are returned with the following priority:
+
+* If the underlying file object is not writable, then FILE-WRITE MUST
+  fail with an EBADF error.
+* Other implementation-defined error conditions.
 
 ### FILE-SEEK
 
