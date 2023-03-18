@@ -494,6 +494,7 @@ length field exceeds this value.
 | index        | u8   | File descriptor to access        |
 | block-number | u32  | 0-based index of block to access |
 | block-length | u16  | Length of the block              |
+| data         | u8*  | Data to update the storage with  |
 
 Possible responses: OK, ERROR
 
@@ -647,6 +648,47 @@ generated, the server MUST repond with OK to indicate the end-of-directory.
 
 The name of the file in the returned directory entry MUST be truncated to
 the max-name-length specifed by the application.
+
+### REMOVE
+
+Remove the specified file or directory.  If removing a directory, the
+directory must be empty.
+
+| Name       | Type  | Notes                       |
+|------------|-------|-----------------------------|
+| type       | u8    | 0x0e                        |
+| flags      | u16   | Flags                       |
+| url-length | u8    | Length of resource in bytes |
+| url        | char* | URL String                  |
+
+The following flags are defined:
+
+| Name        | Value  | Notes                              |
+|-------------|--------|------------------------------------|
+| REMOVE_FILE | 0x0000 | Psuedo-flag; remove a regular file |
+| REMOVE_DIR  | 0x0001 | Remove a directory                 |
+
+Possible responses: OK, ERROR
+
+### RENAME
+
+Rename and/or re-parent the specified file or directory.  If there is
+a file object already residing at the new name, it must be of the same
+object type (file or directory) as the object being renamed and it will
+be removed as if with REMOVE.  While network adapter implementations
+SHOULD make a best-effort to ensure the atomicity of the RENAME operation,
+it is not guaranteed; a RENAME operation over an existing file object MAY
+result in that object being removed even if the rename itself fails.
+
+| Name            | Type  | Notes                  |
+|-----------------|-------|------------------------|
+| type            | u8    | 0x0f                   |
+| old-url-length  | u8    | Length of the old name |
+| old-url         | char* | Old name               |
+| new-url-length  | u8    | Length of the new name |
+| new-url         | char* | New name               |
+
+Possible responses: OK, ERROR
 
 ### END-PROTOCOL
 
