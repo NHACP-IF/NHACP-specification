@@ -33,86 +33,121 @@ The original network adapter protocol did not have any message
 framing.  Each message that was exchanged with between the NABU and
 the adapter had its specific length and response requirements.  This
 protocol is not easy to extend, and as such does not form a good basis
-for functionality proposed in this document.  Thus, for the remainder
-of this document, it is assumed that the NABU application and the
-network adapter are switched to the new protocol.  Once they have
-switched, the old protocol can not be used until explicitly
-re-enabled.
+for functionality proposed in this document.  NHACP, on the other hand,
+uses a message framing mechanism that simplifies message transmission
+and reception, greatly extends the number of available message types,
+allows for independent operating system and application NHACP sessions
+with the network adapter, and also allows both NHACP and non-NHACP
+communication to co-exist between the client and the network adapter.
+
+Historical note: The original NHACP draft, referred to as version 0.0
+in this document, required the client application and the network adapter
+to enter "NHACP mode".  Network adapters MAY support this mode for backwards
+compatibility with existing applications.
 
 All communication in the protocol is initiated by the NABU side.  The
-NABU sends a request message which is responded to by the network
-adapter with exactly one response message.  For real-time
-communication applications in which messages are sent to the NABU
+NABU sends a request message which is responded to by the network adapter
+with exactly one response message.  The NABU MUST NOT send another
+request until it has received a response for the previous request.  For
+real-time communication applications in which messages are sent to the NABU
 through e.g. a network service, the network adapter must buffer these
 messages until the NABU requests to see them.
 
-All messages exchanged use the little-endian byte order.  Thus, a 16
-bit number 0xaa00 is transmitted as the two bytes 0x00 and 0xaa.
-
-Messages must be completely transmitted within one second, intended to
-reduce error recovery time.
-
-Each message consists of a 16 bit length field followed by the number of
-bytes indicated by the length field.  Because messages must be completely
-transmitted within one second, there is a hard ceiling on the maximum
-transmission unit, dictacted by the NABU hardware.  With the native
+Messages must be completely transmitted within one second.  This is intended
+to reduce error recovery time.  As such, there is a hard ceiling on the
+maximum transmission unit, dictacted by the NABU hardware.  With the native
 tramission rate of 111860 bits per second and many network adapter
-implementations using 2 stop bits (for a total of 11 bits per byte),
-10169 bytes is the practical limit that can be transmitted within the
-allotted time.
+implementations using 2 stop bits (for a total of 11 bits per byte), 10169
+bytes is the practical limit that can be transmitted within the allotted time.
 
-The maximum length of an NHACP message is defined to be 8256 bytes.  This
-length was chosen for the following reasons:
+The NHACP protocol specifies a maximum data payload of 8192 bytes and a
+maximum transmission unit of 8256 bytes, thus allowing for 64 bytes of
+framing and message structures.
 
-* It fits within the the one second time limit.
-* It is sufficient for an 8KB data payload plus request/response message
-  and framing overhead.
-* It satisfies a requirement of the original NHACP draft that the most
-  significant bit of the length field is never set, which aids in crash
-  recovery (see below).
+Before any NHACP messages can be exchanged, a session must be established.
+Establishing a session is done using the HELLO request.
 
-Additional error detection features may be enabled when an NHACP session
-is established using the options field in the START-NHACP message.  If
-the CRC8 option is enabled in START-NHACP, then all NHACP messages will
-have a 1-byte CRC-8/WCDMA appended to the end of the frame.  This byte
-MUST be included in the length field of the message, and the length field
-MUST be included in the CRC calculation.  If the CRC field is zero, then
-then the CRC was not computed and the packet MUST NOT be rejected by the
-receiver due to a CRC failure.  If CRC error detection is enabled, the
-network adapter MUST compute the CRC for frames sent to the receiver.
-Client applications MAY choose to ignore CRC at any time.
+Request messages and response messages both share a common format:
 
-No further framing is provided.  The receiver should ignore partial
-or corrupted (if checked) messages and signal an error to the operator
-if it detects the timeout condition.
+| Name     | Type | Notes                                             |
+|----------|------|---------------------------------------------------|
+| length   | u16  | Number of bytes that follow length field          |
+| type     | u8   | Type of message                                   |
+| contents | *    | Message contents (0 .. (8253 - check size) bytes) |
+| check    | *    | Optional error check field                        |
 
-A conforming NHACP server MUST obey the following rules when receiving
-and sending messages:
+All values are exchanged using the little-endian byte order.  Thus, a
+16-bit number 0xaa00 is transmitted as the two bytes 0x00 and 0xaa.
+
+In general, request message types (NABU -> network adapter) fall into
+the range of 0x00 - 0x7f (MSB is zero) and response message types (network
+adapter -> NABU) fall into the range 0x80 - 0xff (MSB is one), with one
+exception: the GOODBYE message has the type 0xef.
+
+The layout of the message contents depends on the message type.  The length
+field indicates the number of message bytes that follow the length field;
+because the message type always follows the length field, the smallest valid
+value for the length field is 1.
+
+Additional error detection features, described below, may be enabled when an
+NHACP session is established using the options field in the HELLO message.
+
+In order to interoperate with other NABU network adapter protocols and to
+multiplex NHACP sessions, request messages are preceeded by two additional
+request header bytes:
+
+| Name          | Type | Notes                                                        |
+|---------------|------|--------------------------------------------------------------|
+| NHACP-REQUEST | u8   | 0x8f                                                         |
+| session_id    | u8   | From SESSION-STARTED response; See HELLO request description |
+
+If the client sends a request with an unknown session ID, the server MUST
+return an ERROR response with the error code ESRCH.
+
+If the CRC8 option is enabled in the HELLO request, then all NHACP messages
+(including the HELLO request) have a 1-byte CRC-8/WCDMA appended to the end
+of the message.  This byte MUST be counted in the length field of the message.
+For request messages, the CRC calculation includes the request header.
+If the CRC8 option is enabled and the CRC field is zero, then then the CRC
+was not computed and the packet MUST NOT be rejected by the receiver due
+to a CRC failure.  If CRC error detection is enabled, the network adapter
+MUST compute the CRC for frames sent to the receiver.  Client applications
+MAY choose to ignore CRC at any time.
+
+The receiver MUST ignore partial or corrupted (if checked) messages and
+SHOULD signal an error to the operator if it detects the timeout condition.
+
+A conforming NHACP network adapter MUST obey the following rules when
+receiving and sending messages:
 
 * When receiving requests, extra bytes sent by the client application
-  beyond the request arguments MUST be ignored by the server.  If the
-  client does send extra bytes, they MUST be included in the frame length
-  and any CRC computation.
+  beyond the request arguments, so long as they are accounted for in
+  the frame length field and CRC computation, MUST be allowed and
+  not considered an error.
 * When sending responses to the client application, the server MUST NOT
   send any extra bytes beyond those required to respond to the request.
 
-## Message type
+Historical note: In NHACP-0.0, the NABU application switched to the NHACP
+protocol by sending a single byte 0xaf to the network adapter.  Unfortunately,
+there were several issues with this approach:
 
-The first field of each message is a 1 byte message type.  Request
-message types (NABU -> Network Adapter) have the MSB set to zero,
-response message types have MSB set to one, with two exceptions:
-
-* The START-NHACP request message type has the value 0x8f.
-* The END-PROTOCOL request message type has the value 0xef.
-
-The layout of the message itself depends on the message type.
+* The message byte 0xaf later collided with a different NABU network adapter
+  protocol extension and there was no simple way to distinguish between
+  the NHACP start-up message and message from the other protocol extension.
+* The message had no way to convey any protocol versioning to the server.
+* There was no way for the client application to enable optional behavior.
+* The protocol was modal and did not support multiple sessions; only NHACP
+  messages could be exchanged, and only one application at a time could
+  exchange them.  The connection would be in NHACP mode until the application
+  sent an END-PROTOCOL request.
+* The modal behavior complicated client reboot detection and recovery.
 
 ## Error handling
 
 For requests that can return an error, there is a well-defined set of
 error codes with standard meanings.  See the ERROR response below.
 
-In the original NHACP draft, the ERROR response could have returned a
+Historical note: In NHACP-0.0, the ERROR response could have returned a
 detailed error message in every response.  However, this requires that
 applications always have a buffer large enough to receive this error
 response (which was over 256 bytes in length).
@@ -125,59 +160,8 @@ receive the initial error indication.  A new GET-ERROR-DETAILS request
 has been added for applications that wish to get detailed error information.
 See the GET-ERROR-DETAILS request below.
 
-## Switching to the new protocol
-
-The NABU application switches to the new protocol by sending a
-START-NHACP message with the following format:
-
-| Name    | Type    | Notes                          |
-|---------|---------|--------------------------------|
-| type    | u8      | 0x8f                           |
-| magic   | char[3] | "ACP"                          |
-| version | u16     | Version number of the protocol |
-| options | u16     | Protocol options               |
-
-N.B. This request is sent while the network adapter is in legacy mode and
-thus DOES NOT use NHACP message framing.
-
-The following options are defined:
-
-| Name | Value  | Notes                              |
-|------|--------|------------------------------------|
-| CRC8 | 0x0001 | Enable CRC-8/WCDMA error detection |
-
-All other option bits are reserved.  If a network adapter does not recognize
-or support any of the specified options, then the network adapter MUST
-ignore the message and not enter NHACP mode.
-
-If the network adapter supports the new protocol, it will response with
-a NHACP-STARTED response (see below) and will then wait for futher messages
-in the new framing format.  If the client is using a protocol version greater
-than what the network adapter supports, the network adapter SHOULD ignore
-the message and not enter NHACP mode.
-
-In the original draft of NHACP, the NABU application switched to the new
-protocol by sending a single byte 0xaf to the network adapter.  Unfortunately,
-there were two issues with this approach:
-
-* The message byte 0xaf later collided with a different NABU network adapter
-  protocol extension and there was no simple way to distinguish between
-  the NHACP start-up message and message from the other protocol extension.
-* The message had no way to convey any protocol versioning information to
-  the server.
-
-Due to its use of a multi-byte sequence, The new START-NHACP message is
-much less likely to collide with another message and includes versioning
-information.
-
-Servers MAY wish to support the original 0xaf message type for NHACP; such
-a server MUST maintain compatibility with the original draft specification
-if this message is used to start NHACP.
-
 ## Protocol versioning
 
-The NHACP-STARTED response contains a protocol version field.
-The initial version of that field was undefined and 0 by convention.
 This document describes version **0.1** of the protocol.  This
 section describes the changes between protocol revisions.  New
 revisions are backward-compatible with previous clients, to the
@@ -186,7 +170,8 @@ explicitly here.
 
 * Version 0.1
     * Defined the protocol versioning convention.
-    * Defined the new START-NHACP message.
+    * Defined the new NHACP-REQUEST session mutiplexing scheme and
+      HELLO and SESSION-STARTED messages.
     * Defined the initial set of error codes.
     * Defined new ERROR response behavior and GET-ERROR-DETAILS request.
     * Defined the new STORAGE-GET-BLOCK and STORAGE-PUT-BLOCK requests.
@@ -203,26 +188,35 @@ explicitly here.
     * Added the optional CRC-8/WCDMA error detection.
 * Version 0.0 - Initial version
 
-The protocol version field in the START-NHACP and NHACP-STARTED messages
-is a single 16-bit unsigned integer that encodes the protocol version in
-a way that is directly arithmetically comparable.  This is intended to
-make protocol version checking simple for the client.  As a convention,
-the "major" and "minor" versions of the protocol are kept in the most-
-significant and last-significant 8 bits of the version field, respectively.
-However, this is merely a convention and the version values defined here
-are authoritative:
+The HELLO request and the SESSION-STARTED respose each include a 16-bit
+unsigned integer that encodes the protocol version supported by the client
+application and the network adapter, respectively.  These values are directly
+arithmetically comparable, and is intended to make protocol version checking
+simple for the client.  As a convention, the "major" and "minor" versions of
+the protocol are kept in the most-significant and last-significant 8 bits of
+the version field, respectively.  However, this is merely a convention and
+the version values defined here are authoritative:
 
 | Value  | Protocol version    |
 |--------|---------------------|
 | 0x0000 | initial NHACP draft |
 | 0x0001 | NHACP version 0.1   |
 
-## Protocol options
+Historical note: NHACP-0.0's initial response, NHACP-STARTED, included
+a version field in the response which was not well-defined and, by
+convention, network adapters filled this field with the value 0x0000.
+This value MUST NOT be used by a client application to establish a new
+NHACP session using the HELLO request.  If a client attempts to do so,
+the network adapter MUST return an ERROR response with the error code
+EINVAL.
 
-At this time, there are no protocol options defined.  All bits in the
-START-NHACP options field are reserved for future use.  Network adapters
-MUST ignore a START-NHACP request that specifies a protocol option not
-supported by the network adapter.
+Network adapters MAY wish to support the original 0xaf message type for
+NHACP; such a server MUST maintain compatibility with the original draft
+specification if this message is used to start NHACP.  If the client
+attempts to enter NHACP-0.0 mode while other NHACP sessions are established,
+the network adapter MUST ignore the request; the modal nature of NHACP-0.0
+would necessarily starve the other NHACP sessions of access to the
+network adapter.
 
 ## Complex aggregate types
 
@@ -259,6 +253,68 @@ A "special" file is a file that is not a regular file nor a directory.
 
 ## Request messages
 
+### HELLO
+
+Establish a new NHACP session.
+
+| Name    | Type    | Notes                          |
+|---------|---------|--------------------------------|
+| type    | u8      | 0x00                           |
+| magic   | char[3] | "ACP"                          |
+| version | u16     | Version number of the protocol |
+| options | u16     | Protocol options               |
+
+Possible responses: SESSION-STARTED, ERROR
+
+When establishing a new session, the session ID from the request header
+is examined to determine what kind of session to create.  The following
+are the only valid session ID values in a HELLO request:
+
+| Name   | Value | Notes                         |
+|--------|-------|-------------------------------|
+| SYSTEM | 0x00  | Establish the SYSTEM session  |
+| CREATE | 0xff  | Create an application session |
+
+The system session is intended to be used by the client operating system
+software (e.g. the CP/M BIOS) to provide system services and is treated
+specially; when the SYSTEM session is established, any previous sessions
+associated with this client connection are closed and their resources freed.
+This is done under the assumption that if a client is establishing the
+system session, it has rebooted and thus no longer has any knowledge of
+those previous sessions.  The network adapter MUST support the system session,
+and MUST assign the system session the session ID 0.
+
+If an application session is requested, the network adapter MAY allocate the
+necessary context data and assign it a session ID in the range 1 .. 254.
+Network adapters MUST support at least one application sesssion.
+
+In either case, the session ID is returned to the client in the
+SESSION-STARTED response.  This session ID MUST be used by the
+requesting client in subsequent NHACP requests.
+
+If the client specifies any other session ID with a HELLO request, the
+network adapter MUST return an ERROR response with the error code EINVAL.
+If all of the available sessions on the network adapter are in-use, then
+the network adapter MUST return an ERROR response with the error code
+ENSESS.
+
+If the magic field of the HELLO request is not the 3-byte sequence "ACP",
+then the network adapter SHOULD ignore the request, as it may not be a
+NHACP HELLO request at all.
+
+The following options are defined:
+
+| Name | Value  | Notes                              |
+|------|--------|------------------------------------|
+| CRC8 | 0x0001 | Enable CRC-8/WCDMA error detection |
+
+All other option bits are reserved.
+
+If the client requests an NHACP version greater than that supported by
+the network adapter or if the client requests an option not recognized
+or not supported by the network adapter, then the network adapter MUST
+return an ERROR response with the error code ENOTSUP.
+
 ### STORAGE-OPEN
 
 Open a URL and assign a storage index to it.  The URL can be relative
@@ -272,7 +328,7 @@ The network adapter will attempt to use the file descriptor specified by
 the caller unless the caller specifies 0xff, in which case the network
 adapter will attempt to allocate a file descriptor.  If the requested
 file descriptor is already in-use by another file object, the STORAGE-OPEN
-request MUST fail.
+request MUST return an ERROR response with the error code EBUSY.
 
 | Name       | Type  | Notes                                                                 |
 |------------|-------|-----------------------------------------------------------------------|
@@ -281,6 +337,8 @@ request MUST fail.
 | flags      | u16   | Flags to pass to storage handler                                      |
 | url-length | u8    | Length of resource in bytes                                           |
 | url        | char* | URL String                                                            |
+
+Possible responses: STORAGE-LOADED, ERROR
 
 The following flags are defined:
 
@@ -298,8 +356,8 @@ request.
 
 While NHACP-0.0 had a slot allocated in the STORAGE-OPEN request for flags,
 it did not define any flags.  Network adapters that support NHACP-0.0
-SHOULD ignore the flags field and assume O_RDWR+O_CREAT for connections
-in NHACP-0.0 mode.
+SHOULD ignore the flags field and assume O_RDWR+O_CREAT for NHACP-0.0
+sessions.
 
 There are some considerations around a file object's attributes that need
 to be considered that impact client-visible file behavior:
@@ -328,15 +386,13 @@ applications that are in conflict with them.
   the network adapter then the STORAGE-OPEN call MUST return an ERROR
   response with the error code set to EACCES.
 
-Possible responses: STORAGE-LOADED, ERROR
-
 ### STORAGE-GET
 
 Get data from network adapter storage.
 
-The maximum payload langth for a STORAGE-GET is 8192 bytes.  Network
-adapters MUST return an error for STORAGE-GET requests whose length
-field exceeds this value.
+The maximum data length for a STORAGE-GET is 8192 bytes.  Network
+adapters MUST return an ERROR response with error code EINVAL for
+STORAGE-GET requests whose length field exceeds this value.
 
 | Name   | Type | Notes                            |
 |--------|------|----------------------------------|
@@ -356,16 +412,17 @@ then the length MUST be the number of bytes read before
 the end-of-file was encountered.
 
 If the underlying file object cannot be accessed at arbitrary offsets,
-then STORAGE-GET MUST fail with an ESEEK error.
+the network adapter MUST return an ERROR response with the error code
+ESEEK.
 
 ### STORAGE-PUT
 
 Update data stored in the network adapter.  If possible, the
 underlying storage (file/URL) should be updated as well.
 
-The maximum payload langth for a STORAGE-PUT is 8192 bytes.  Network
-adapters MUST return an error for STORAGE-PUT requests whose length
-field exceeds this value.
+The maximum data lengtyh for a STORAGE-PUT is 8192 bytes.  Network
+adapters MUST return an ERROR response with error code EINVAL for
+STORAGE-PUT requests whose length field exceeds this value.
 
 | Name   | Type | Notes                            |
 |--------|------|----------------------------------|
@@ -384,13 +441,13 @@ enlarged to accommodate the write.  For writes that originate
 beyond end-of-file, the region between the old end-of-file and
 the newly-written region MUST be implicitly zero-filled.  If
 a server implementation does not support extending the underlying
-file object, then the server MUST return an error without
-performing the write operation.
+file object, then the server MUST return an ERROR response with
+the error code ENOTSUP without performing the write operation.
 
 Errors are returned with the following priority:
 
-* If the underlying file object is not writable, then STORAGE-PUT MUST
-  fail with an EBADF error.
+* If the underlying file object was not opened with write access, then
+  STORAGE-PUT MUST fail with an EBADF error.
 * If the underlying file object cannot be accessed at arbitrary offsets,
   then STORAGE-PUT MUST fail with an ESEEK error.
 * Other implementation-defined error conditions.
@@ -455,9 +512,9 @@ STORAGE-GET-BLOCK operates on atomic units; partial reads MUST be zero-padded
 to the block size.  Reads that originate beyond the end-of-file MUST result
 in 0 bytes being returned.
 
-The maximum payload langth for a STORAGE-GET-BLOCK is 8192 bytes.  Network
-adapters MUST return an error for STORAGE-GET-BLOCK requests whose block
-length field exceeds this value.
+The maximum data length for a STORAGE-GET-BLOCK is 8192 bytes.  Network
+adapters MUST return an ERROR response with error code EINVAL for
+STORAGE-GET requests whose length field exceeds this value.
 
 | Name         | Type | Notes                            |
 |--------------|------|----------------------------------|
@@ -484,9 +541,9 @@ adapter as:
 
 	offset = block-number * block-length
 
-The maximum payload langth for a STORAGE-PUT-BLOCK is 8192 bytes.  Network
-adapters MUST return an error for STORAGE-PUT-BLOCK requests whose block
-length field exceeds this value.
+The maximum data lengtyh for a STORAGE-PUT-BLOCK is 8192 bytes.  Network
+adapters MUST return an ERROR response with error code EINVAL for
+STORAGE-PUT requests whose length field exceeds this value.
 
 | Name         | Type | Notes                            |
 |--------------|------|----------------------------------|
@@ -505,13 +562,13 @@ enlarged to accommodate the write.  For writes that originate
 beyond end-of-file, the region between the old end-of-file and
 the newly-written region MUST be implicitly zero-filled.  If
 a server implementation does not support extending the underlying
-file object, then the server MUST return an error without
-performing the write operation.
+file object, then the server MUST return an ERROR response with
+the error code ENOTSUP without performing the write operation.
 
 Errors are returned with the following priority:
 
-* If the underlying file object is not writable, then STORAGE-PUT-BLOCK MUST
-  fail with an EBADF error.
+* If the underlying file object was not opened with write access, then
+  STORAGE-PUT-BLOCK MUST fail with an EBADF error.
 * If the underlying file object cannot be accessed at arbitrary offsets,
   then STORAGE-PUT-BLOCK MUST fail with an ESEEK error.
 * Other implementation-defined error conditions.
@@ -577,8 +634,8 @@ return an error without performing the write operation.
 
 Errors are returned with the following priority:
 
-* If the underlying file object is not writable, then FILE-WRITE MUST
-  fail with an EBADF error.
+* If the underlying file object was not opened with write access, then
+  FILE-WRITE MUST fail with an EBADF error.
 * Other implementation-defined error conditions.
 
 ### FILE-SEEK
@@ -593,6 +650,8 @@ seek origin.
 | offset | s32  | Offset relative to seek origin   |
 | whence | u8   | The origin of the seek           |
 
+Possible responses: UINT32-VALUE, ERROR
+
 The following whence values are defined:
 
 | Name      | Value | Notes                                                    |
@@ -606,8 +665,6 @@ measured in bytes from the beginning of the file.
 
 If the underlying file object does not have a cursor that can be respositioned,
 then FILE-SEEK MUST fail with an ESEEK error.
-
-Possible responses: UINT32-VALUE, ERROR
 
 ### LIST-DIR
 
@@ -661,14 +718,14 @@ directory must be empty.
 | url-length | u8    | Length of resource in bytes |
 | url        | char* | URL String                  |
 
+Possible responses: OK, ERROR
+
 The following flags are defined:
 
 | Name        | Value  | Notes                              |
 |-------------|--------|------------------------------------|
 | REMOVE_FILE | 0x0000 | Psuedo-flag; remove a regular file |
 | REMOVE_DIR  | 0x0001 | Remove a directory                 |
-
-Possible responses: OK, ERROR
 
 ### RENAME
 
@@ -690,32 +747,42 @@ result in that object being removed even if the rename itself fails.
 
 Possible responses: OK, ERROR
 
-### END-PROTOCOL
+### GOODBYE
 
-Return to legacy protocol processing, i.e. before returning to the
-legacy menu system.
+End an NHACP session.  If the session ID specifies the SYSTEM session,
+then all NHACP sessions will be ended.  This is done under the assumption
+that the operating system is performing an orderly shutdown.
 
 | Name | Type | Notes |
 |------|------|-------|
 | type | u8   | 0xEF  |
 
-No specific response message is returned by the network adapter.  The
-NABU is free to send legacy messages and expect the adapter to respond
-like normal.
+No response message is returned by the network adapter.  If the GOODBYE
+request arrives with an unknown session ID, the network adapter MUST ignore
+the request.
 
 ## Response messages
 
 Type tags in response messages have their MSB set.  Their numbering
 must be consecutive to support fast dispatching on the type byte.
 
-### NHACP-STARTED
+### SESSION-STARTED
 
 | Name              | Type  | Notes                                   |
 |-------------------|-------|-----------------------------------------|
 | type              | u8    | 0x80                                    |
+| session_id        | u8    | Session ID of the new session           |
 | version           | u16   | Version number of the protocol          |
 | adapter-id-length | u8    | Length of adapter identification string |
 | adapter-id        | char* | Adapter identification string           |
+
+If the client specified the SYSTEM session in the HELLO request, then
+the network adapter MUST return the SYSTEM session ID in the SESSION-STARTED
+response.
+
+Historical note: This message uses the same type code as the NHACP-0.0
+NHACP-STARTED message, which has a similar format, but lacks the session_id
+field.
 
 ### OK
 
@@ -732,30 +799,36 @@ must be consecutive to support fast dispatching on the type byte.
 | message-length | u8    | Length of error message |
 | message        | char* | Error message           |
 
-Note that for all requests other than GET-ERROR-DETAILS, the
-message-length field will be 0.
+In an ERROR response to any request other than GET-ERROR-DETAILS,
+the network adapter MUST set the message-length field to 0 and omit
+the detailed error message.
 
 The following error codes are defined:
 
-| Name      | Value | Notes                         |
-|-----------|-------|-------------------------------|
-| undefined | 0     | undefined generic error       |
-| ENOTSUP   | 1     | Operation is not supported    |
-| EPERM     | 2     | Operation is not permitted    |
-| ENOENT    | 3     | Requested file does not exist |
-| EIO       | 4     | Input/output error            |
-| EBADF     | 5     | Bad file descriptor           |
-| ENOMEM    | 6     | Out of memory                 |
-| EACCES    | 7     | Access denied                 |
-| EBUSY     | 8     | File is busy                  |
-| EEXIST    | 9     | File already exists           |
-| EISDIR    | 10    | File is a directory           |
-| EINVAL    | 11    | Invalid argument/request      |
-| ENFILE    | 12    | Too many open files           |
-| EFBIG     | 13    | File is too large             |
-| ENOSPC    | 14    | Out of space                  |
-| ESEEK     | 15    | Seek on non-seekable file     |
-| ENOTDIR   | 16    | File is not a directory       |
+| Name      | Value | Notes                             |
+|-----------|-------|-----------------------------------|
+| undefined | 0     | undefined generic error           |
+| ENOTSUP   | 1     | Operation is not supported        |
+| EPERM     | 2     | Operation is not permitted        |
+| ENOENT    | 3     | Requested file does not exist     |
+| EIO       | 4     | Input/output error                |
+| EBADF     | 5     | Bad file descriptor               |
+| ENOMEM    | 6     | Out of memory                     |
+| EACCES    | 7     | Access denied                     |
+| EBUSY     | 8     | File is busy                      |
+| EEXIST    | 9     | File already exists               |
+| EISDIR    | 10    | File is a directory               |
+| EINVAL    | 11    | Invalid argument/request          |
+| ENFILE    | 12    | Too many open files               |
+| EFBIG     | 13    | File is too large                 |
+| ENOSPC    | 14    | Out of space                      |
+| ESEEK     | 15    | Seek on non-seekable file         |
+| ENOTDIR   | 16    | File is not a directory           |
+| ENOTEMPTY | 17    | Directory is not empty            |
+| ESRCH     | 18    | No such process or session        |
+| ENSESS    | 19    | Too many sessions                 |
+| EAGAIN    | 20    | Try again later                   |
+| EROFS     | 21    | Storage object is write-protected |
 
 All other error codes are reserved.
 
@@ -765,7 +838,7 @@ All other error codes are reserved.
 |--------|------|---------------------------------------------|
 | type   | u8   | 0x83                                        |
 | index  | u8   | Storage index that was provided or selected |
-| length | u32  | Length of the data that was buffered        |
+| length | u32  | Length of the underlying storage object     |
 
 ### DATA-BUFFER
 
@@ -814,96 +887,156 @@ All other error codes are reserved.
 
 ## Recovering from a crash
 
-When a NABU application crashes while the modern protocol is selected,
-the network adapter needs to detect that the NABU is restarting.  As
-the NABU ROM sends at least 4 "SET STATUS (0x83)" messages during
-startup, the network adapter can assume that if it receives a length
-field of 0x8383, it needs to restart in legacy protocol mode in order
-to boot the NABU.
+When a NABU application crashes while NHACP sessions are active, the
+network adapter needs to detect that the NABU is restarting.  Network
+adapter implementations MUST end all NHACP sessions in a manner that
+is equivelent to handling a GOODBYE request with the SYSTEM session ID
+if the network adapter receives the 0x83 (START-UP) message from the
+NABU.
+
+Historical note: Because NHACP-0.0 was modal, network adapters needed
+to watch for the most significant byte of an NHACP length frame containing
+the value 0x83, or, more loosely, watch for the most significant bit of
+the length field being set.  While this worked well enough, it complicated
+error recovery and placed additional constraints on non-NABU adopters of
+the NHACP protocol.  If a network adapter chooses to support the NHACP-0.0
+version of the protocol, it MUST use the same crash detection logic for
+NHACP-0.0 sessions and exit back into classic mode.
 
 ## Example exchanges
 
 The following are examples of NHACP request / response exchanges.
-In each column, the message starts with the message name, then the
-byte stream, including the frame length bytes, that comprises the
-example message being sent.  Double-quotes denote ASCII strings,
-which are used for readability.
+Double-quotes denote non-NUL-terminated ASCII strings, which are
+used for readability.
 
-### Establishing an NHACP connection
+### Establishing an NHACP system session
 
-| Application | Network Adapter    |
-|-------------|--------------------|
-| START-NHACP |                    |
-| 0x8f        |                    |
-| "ACP"       |                    |
-| 0x01 0x00   |                    |
-| 0x00 0x00   |                    |
-|             | NHACP-STARTED      |
-|             | 0x14 0x00          |
-|             | 0x80               |
-|             | 0x01 0x00          |
-|             | 0x10               |
-|             | "NABU-ADAPTOR-1.1" |
+| Application   | Network Adapter        |
+|---------------|------------------------|
+| 0x8f          |                        |
+| 0x00 [SYSTEM] |                        |
+| 0x08 0x00     |                        |
+| 0x00 [HELLO]  |                        |
+| "ACP"         |                        |
+| 0x01 0x00     |                        |
+| 0x00 0x00     |                        |
+|               | 0x15 0x00              |
+|               | 0x80 [SESSION-STARTED] |
+|               | 0x00                   |
+|               | 0x01 0x00              |
+|               | 0x10                   |
+|               | "NABU-ADAPTOR-1.1"     |
 
-### Opening a 1KB file, reading 1KB of data, closing the file
+### Establishing an NHACP application session
 
-| Application         | Network Adapter      |
-|---------------------|----------------------|
-| STORAGE-OPEN        |                      |
-| 0x0f 0x00           |                      |
-| 0x01                |                      |
-| 0xff                |                      |
-| 0x00 0x00           |                      |
-| 0x0a                |                      |
-| "LEVEL1.DAT"        |                      |
-|                     | STORAGE-LOADED       |
-|                     | 0x06 0x00            |
-|                     | 0x83                 |
-|                     | 0x00                 |
-|                     | 0x00 0x04 0x00 0x00  |
-| STORAGE-GET         |                      |
-| 0x08 0x00           |                      |
-| 0x02                |                      |
-| 0x00                |                      |
-| 0x00 0x00 0x00 0x00 |                      |
-| 0x00 0x04           |                      |
-|                     | DATA-BUFFER          |
-|                     | 0x03 0x04            |
-|                     | 0x84                 |
-|                     | 0x00 0x04            |
-|                     | <1024 bytes of data> |
-| FILE-CLOSE          |                      |
-| 0x02 0x00           |                      |
-| 0x05                |                      |
-| 0x00                |                      |
+| Application   | Network Adapter        |
+|---------------|------------------------|
+| 0x8f          |                        |
+| 0xff [CREATE] |                        |
+| 0x08 0x00     |                        |
+| 0x00 [HELLO]  |                        |
+| "ACP"         |                        |
+| 0x01 0x00     |                        |
+| 0x00 0x00     |                        |
+|               | 0x15 0x00              |
+|               | 0x80 [SESSION-STARTED] |
+|               | 0x01                   |
+|               | 0x01 0x00              |
+|               | 0x10                   |
+|               | "NABU-ADAPTOR-1.1"     |
+
+### Opening a 1KB file, reading 1KB of data from offset 0, closing the file
+
+| Application         | Network Adapter       |
+|---------------------|-----------------------|
+| 0x8f                |                       |
+| 0x01                |                       |
+| 0x0f 0x00           |                       |
+| 0x01 [STORAGE-OPEN] |                       |
+| 0xff                |                       |
+| 0x00 0x00           |                       |
+| 0x0a                |                       |
+| "LEVEL1.DAT"        |                       |
+|                     | 0x06 0x00             |
+|                     | 0x83 [STORAGE-LOADED] |
+|                     | 0x00                  |
+|                     | 0x00 0x04 0x00 0x00   |
+| 0x8f                |                       |
+| 0x01                |                       |
+| 0x08 0x00           |                       |
+| 0x02 [STORAGE-GET]  |                       |
+| 0x00                |                       |
+| 0x00 0x00 0x00 0x00 |                       |
+| 0x00 0x04           |                       |
+|                     | 0x03 0x04             |
+|                     | 0x84 [DATA-BUFFER]    |
+|                     | 0x00 0x04             |
+|                     | <1024 bytes of data>  |
+| 0x8f                |                       |
+| 0x01                |                       |
+| 0x02 0x00           |                       |
+| 0x05 [FILE-CLOSE]   |                       |
+| 0x00                |                       |
+
+### Opening a 1KB file, reading 1KB of data using sequential read, closing the file
+
+| Application         | Network Adapter       |
+|---------------------|-----------------------|
+| 0x8f                |                       |
+| 0x01                |                       |
+| 0x0f 0x00           |                       |
+| 0x01 [STORAGE-OPEN] |                       |
+| 0xff                |                       |
+| 0x00 0x00           |                       |
+| 0x0a                |                       |
+| "LEVEL1.DAT"        |                       |
+|                     | 0x06 0x00             |
+|                     | 0x83 [STORAGE-LOADED] |
+|                     | 0x00                  |
+|                     | 0x00 0x04 0x00 0x00   |
+| 0x8f                |                       |
+| 0x01                |                       |
+| 0x06 0x00           |                       |
+| 0x09 [FILE-READ]    |                       |
+| 0x00                |                       |
+| 0x00 0x04           |                       |
+|                     | 0x03 0x04             |
+|                     | 0x84 [DATA-BUFFER]    |
+|                     | 0x00 0x04             |
+|                     | <1024 bytes of data>  |
+| 0x8f                |                       |
+| 0x01                |                       |
+| 0x02 0x00           |                       |
+| 0x05 [FILE-CLOSE]   |                       |
+| 0x00                |                       |
 
 ### Opening a file, error return, getting error details
 
-| Application       | Network Adapter                    |
-|-------------------|------------------------------------|
-| STORAGE-OPEN      |                                    |
-| 0x0a 0x00         |                                    |
-| 0x01              |                                    |
-| 0xff              |                                    |
-| 0x00 0x00         |                                    |
-| 0x05              |                                    |
-| "C.DSK"           |                                    |
-|                   | ERROR                              |
-|                   | 0x04 0x00                          |
-|                   | 0x82                               |
-|                   | 0x04 0x00                          |
-|                   | 0x00                               |
-| GET-ERROR-DETAILS |                                    |
-| 0x04 0x00         |                                    |
-| 0x06              |                                    |
-| 0x04 0x00         |                                    |
-| 0x40              |                                    |
-|                   | ERROR                              |
-|                   | 0x24 0x00                          |
-|                   | 0x82                               |
-|                   | 0x04 0x00                          |
-|                   | 0x20                               |
-|                   | "C.DSK: no such file or directory" |
+| Application              | Network Adapter                    |
+|--------------------------|------------------------------------|
+| 0x8f                     |                                    |
+| 0x00 [SYSTEM]            |                                    |
+| 0x0a 0x00                |                                    |
+| 0x01 [STORAGE-OPEN]      |                                    |
+| 0xff                     |                                    |
+| 0x00 0x00                |                                    |
+| 0x05                     |                                    |
+| "C.DSK"                  |                                    |
+|                          | 0x04 0x00                          |
+|                          | 0x82 [ERROR]                       |
+|                          | 0x04 0x00                          |
+|                          | 0x00                               |
+| 0x8f                     |                                    |
+| 0x00 [SYSTEM]            |                                    |
+| 0x04 0x00                |                                    |
+| 0x06 [GET-ERROR-DETAILS] |                                    |
+| 0x04 0x00                |                                    |
+| 0x40                     |                                    |
+|                          | 0x24 0x00                          |
+|                          | 0x82 [ERROR]                       |
+|                          | 0x04 0x00                          |
+|                          | 0x20                               |
+|                          | "C.DSK: no such file or directory" |
 
 ### CRC-8/WCDMA Test Vectors
 
