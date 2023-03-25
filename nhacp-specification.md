@@ -342,49 +342,39 @@ Possible responses: STORAGE-LOADED, ERROR
 
 The following flags are defined:
 
-| Name      | Value  | Notes                                      |
-|-----------|--------|--------------------------------------------|
-| O_RDWR    | 0x0000 | Psuedo-flag; open the file read-write      |
-| O_RDONLY  | 0x0001 | Open the file read-only                    |
-| O_CREAT   | 0x0002 | Create the file if it does not exist       |
-| O_EXCL    | 0x0004 | Return an error if the file already exists |
+| Name        | Value  | Notes                                         |
+|-------------|--------|-----------------------------------------------|
+| O_ACCMODE   | 0x0007 | Lower 3 bits are mask for access mode         |
+| O_RDONLY    | 0x0000 | Open only for reading.                        |
+| O_RDWR      | 0x0001 | Open for reading + writing                    |
+| O_RDWP      | 0x0002 | RDWR + lazy write-protect                     |
+| O_DIRECTORY | 0x0008 | 1=must be a directory, 0=must be regular file |
+| O_CREAT     | 0x0010 | Create the file if it does not exist          |
+| O_EXCL      | 0x0020 | Return an error if the file already exists    |
 
 All other flag values are reserved.
 
 Note that O_EXCL has no effect if O_CREAT is not specified in the
 request.
 
+If a read-only storage object is opened with O_RDWR, then the network
+adapter MUST return an ERROR response with the error code EACCES.
+
+O_RDWP is intended to mimic a write-protected floppy disk; if a read-only
+storage object is opened with O_RDWP the open MUST succeed, but any
+attempt to write to or otherwise modify the object MUST return an EROFS
+error.
+
 While NHACP-0.0 had a slot allocated in the STORAGE-OPEN request for flags,
 it did not define any flags.  Network adapters that support NHACP-0.0
-SHOULD ignore the flags field and assume O_RDWR+O_CREAT for NHACP-0.0
+SHOULD ignore the flags field and assume O_RDWP+O_CREAT for NHACP-0.0
 sessions.
 
-There are some considerations around a file object's attributes that need
-to be considered that impact client-visible file behavior:
-
-* Seekability - whether or not the underlying file object can be accessed
-  at arbitrary offsets on a per-requeset basis.  Several file access requests
-  require a file to be "seekable".
-* Writability - whether or not the underlying file object can be modified.
-  If an application opens a file with the O_RDWR flag, it expects to
-  modify the file.
-
-Some latitude is afforded to network adapter implementations in how they
-might wish to handle these attributes in the face of requests from client
-applications that are in conflict with them.
-
-* If the underlying file object being opened is a regular file but is
-  _not_ seekable (e.g. is a remote file being accessed over HTTP), then
-  the network adapter SHOULD download a temporary copy to local storage
-  in order to provide random access to that file object.  If this behavior
-  is not implemented by the network adapter then any positional I/O request
-  MUST return an ERROR response with the error code set to ESEEK.
-* If the underlying file object being opened is not writable but the
-  client application has opened with O_RDWR, then the network adapter
-  MAY create a temporary local copy in local storage that can be modified
-  by the client application.  If this behavior is not implemented by
-  the network adapter then the STORAGE-OPEN call MUST return an ERROR
-  response with the error code set to EACCES.
+If a non-seekable storage object (for example, a regular file accessed
+using HTTP) is opened with the STORAGE-OPEN request, the network adapter
+MUST buffer that object locally such that random access to the object
+using the STORAGE-GET and STORAGE-GET-BLOCK requests is possible.  The
+network adapter SHOULD treat such objects as read-only.
 
 ### STORAGE-GET
 
