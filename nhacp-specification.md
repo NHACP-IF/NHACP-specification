@@ -350,6 +350,7 @@ The following flags are defined:
 | O_DIRECTORY | 0x0008 | If set, object must be a directory, else must be a regular file |
 | O_CREAT     | 0x0010 | Create the file if it does not exist                            |
 | O_EXCL      | 0x0020 | Return an error if the file already exists                      |
+| O_TRUNC     | 0x0040 | Truncate existing file to length 0                              |
 
 All other flag values are reserved.
 
@@ -357,8 +358,11 @@ The least significant 3 bits of the flags field define the access
 mode.  Thus, the values O_RDONLY, O_RDWR, and O_RDWP are part of
 an enumeration and are mutually-exclusive with one another.
 
-Note that O_EXCL has no effect if O_CREAT is not specified in the
-request.
+If O_EXCL is specified and the O_CREAT flag is not specified, then
+the O_EXCL flag MUST be ignored.
+
+If O_TRUNC is specified and the storage object is opened with read-only
+access, then the O_TRUNC flag MUST be ignored.
 
 If a read-only storage object is opened with O_RDWR, then the network
 adapter MUST return an ERROR response with the error code EACCES.
