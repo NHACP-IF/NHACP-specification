@@ -180,9 +180,11 @@ explicitly here.
     * Redefined the DATE-TIME response message to use the DATE-TIME structure.
       Layout of the message is backwards-compatible.
     * Defined the new UINT8-VALUE, UINT16-VALUE, and UINT32-VALUE responses.
-    * Defined the new FILE-READ, FILE-WRITE, and FILE-SEEK requests.
+    * Defined the new FILE-READ, FILE-WRITE, FILE-SEEK, FILE-GETATTR, and
+      FILE-SETSIZE requests, and FILE-ATTRS response.
     * Defined the new LIST-DIR and GET-DIR-ENTRY requests and DIR-ENTRY
       response.
+    * Defined the new REMOVE, RENAME, and MKDIR requests.
     * Renamed STORAGE-CLOSE to FILE-CLOSE.  The semantics of the operation
       are unchanged.
     * Added the optional CRC-8/WCDMA error detection.
@@ -663,6 +665,32 @@ measured in bytes from the beginning of the file.
 If the underlying file object does not have a cursor that can be respositioned,
 then FILE-SEEK MUST fail with an ESEEK error.
 
+### FILE-GETATTR
+
+Get the attributes of the file associated with a file descriptor.
+
+| Name   | Type | Notes                     |
+|--------|------|---------------------------|
+| type   | u8   | 0x0c                      |
+| index  | u8   | File descriptor to access |
+
+Possible responses: FILE-ATTRS, ERROR
+
+### FILE-SETSIZE
+
+Set the size of a file associated with a file descriptor.  If the new
+size is larger than the current size of the underlying storage object,
+then the network adapter MUST zero-fill the region between the old
+end-of-file and the new end-of-file.
+
+| Name  | Type | Notes                     |
+|-------|------|---------------------------|
+| type  | u8   | 0x0d                      |
+| index | u8   | File descriptor to access |
+| size  | u32  | New file size             |
+
+Possible responses: OK, ERROR
+
 ### LIST-DIR
 
 This request causes the network adapter to scan a directory for file names
@@ -674,7 +702,7 @@ file descriptor.
 
 | Name           | Type  | Notes                                   |
 |----------------|-------|-----------------------------------------|
-| type           | u8    | 0x0c                                    |
+| type           | u8    | 0x0e                                    |
 | index          | u8    | File descriptor of directory to list    |
 | pattern-length | u8    | Legth of the file name matching pattern |
 | pattern        | char* | File name matching pattern              |
@@ -691,7 +719,7 @@ advances the directory cursor.
 
 | Name            | Type  | Notes                                             |
 |-----------------|-------|---------------------------------------------------|
-| type            | u8    | 0x0d                                              |
+| type            | u8    | 0x0f                                              |
 | index           | u8    | File descriptor of directory that has been listed |
 | max-name-length | u8    | Maximum length of the returned file name          |
 
@@ -710,7 +738,7 @@ directory must be empty.
 
 | Name       | Type  | Notes                       |
 |------------|-------|-----------------------------|
-| type       | u8    | 0x0e                        |
+| type       | u8    | 0x10                        |
 | flags      | u16   | Flags                       |
 | url-length | u8    | Length of resource in bytes |
 | url        | char* | URL String                  |
@@ -736,11 +764,23 @@ result in that object being removed even if the rename itself fails.
 
 | Name            | Type  | Notes                  |
 |-----------------|-------|------------------------|
-| type            | u8    | 0x0f                   |
+| type            | u8    | 0x11                   |
 | old-url-length  | u8    | Length of the old name |
 | old-url         | char* | Old name               |
 | new-url-length  | u8    | Length of the new name |
 | new-url         | char* | New name               |
+
+Possible responses: OK, ERROR
+
+### MKDIR
+
+Create a directory at the specified location.
+
+| Name       | Type  | Notes                       |
+|------------|-------|-----------------------------|
+| type       | u8    | 0x12                        |
+| url-length | u8    | Length of resource in bytes |
+| url        | char* | URL String                  |
 
 Possible responses: OK, ERROR
 
@@ -881,6 +921,13 @@ All other error codes are reserved.
 |-------|------|----------------------|
 | type  | u8   | 0x89                 |
 | value | u32  | Generic 32-bit value |
+
+### FILE-ATTRS
+
+| Name        | Type       | Notes           |
+|-------------|------------|-----------------|
+| type        | u8         | 0x8a            |
+| attrs       | FILE-ATTRS | File attributes |
 
 ## Recovering from a crash
 
