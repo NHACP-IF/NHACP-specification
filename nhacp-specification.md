@@ -344,7 +344,6 @@ The following flags are defined:
 
 | Name        | Value  | Notes                                                           |
 |-------------|--------|-----------------------------------------------------------------|
-| O_ACCMODE   | 0x0007 | Lower 3 bits are mask for access mode                           |
 | O_RDONLY    | 0x0000 | Open only for reading.                                          |
 | O_RDWR      | 0x0001 | Open for reading + writing                                      |
 | O_RDWP      | 0x0002 | RDWR + lazy write-protect                                       |
@@ -353,6 +352,10 @@ The following flags are defined:
 | O_EXCL      | 0x0020 | Return an error if the file already exists                      |
 
 All other flag values are reserved.
+
+The least significant 3 bits of the flags field define the access
+mode.  Thus, the values O_RDONLY, O_RDWR, and O_RDWP are part of
+an enumeration and are mutually-exclusive with one another.
 
 Note that O_EXCL has no effect if O_CREAT is not specified in the
 request.
