@@ -342,15 +342,15 @@ Possible responses: STORAGE-LOADED, ERROR
 
 The following flags are defined:
 
-| Name        | Value  | Notes                                         |
-|-------------|--------|-----------------------------------------------|
-| O_ACCMODE   | 0x0007 | Lower 3 bits are mask for access mode         |
-| O_RDONLY    | 0x0000 | Open only for reading.                        |
-| O_RDWR      | 0x0001 | Open for reading + writing                    |
-| O_RDWP      | 0x0002 | RDWR + lazy write-protect                     |
-| O_DIRECTORY | 0x0008 | 1=must be a directory, 0=must be regular file |
-| O_CREAT     | 0x0010 | Create the file if it does not exist          |
-| O_EXCL      | 0x0020 | Return an error if the file already exists    |
+| Name        | Value  | Notes                                                           |
+|-------------|--------|-----------------------------------------------------------------|
+| O_ACCMODE   | 0x0007 | Lower 3 bits are mask for access mode                           |
+| O_RDONLY    | 0x0000 | Open only for reading.                                          |
+| O_RDWR      | 0x0001 | Open for reading + writing                                      |
+| O_RDWP      | 0x0002 | RDWR + lazy write-protect                                       |
+| O_DIRECTORY | 0x0008 | If set, object must be a directory, else must be a regular file |
+| O_CREAT     | 0x0010 | Create the file if it does not exist                            |
+| O_EXCL      | 0x0020 | Return an error if the file already exists                      |
 
 All other flag values are reserved.
 
