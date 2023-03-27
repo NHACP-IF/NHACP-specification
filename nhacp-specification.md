@@ -16,7 +16,7 @@ network based storage services to applications running on the NABU.
 This document proposes a unified protocol to be implemented by network
 adapters to support NABU applications.
 
-## Serial communication
+## Communication interface
 
 The NABU HCCA serial interface is an asynchronous RS422 port running
 at ~111860 bits per second using 8 bits per character, no parity and
@@ -26,6 +26,13 @@ computers, network adapters usually use the standard 115200 bps baud
 rate with two stop bits.  While this is slightly too fast, it matches
 close enough for both sides to be able to read the bytes coming from
 the other end.
+
+Despite the historical origins with the NABU system, this protocol does
+not specify, and is independent of, the physical transport used.  While
+serial connections are certainly expected to be used with this protocol,
+any stream-oriented transport may be used including, but not limited to,
+non-serial I/O mapped hardware devices and stream-oriented network protocols,
+such as TCP/IP.
 
 ## Message framing
 
