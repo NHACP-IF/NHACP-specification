@@ -188,7 +188,7 @@ explicitly here.
       Layout of the message is backwards-compatible.
     * Defined the new UINT8-VALUE, UINT16-VALUE, and UINT32-VALUE responses.
     * Defined the new FILE-READ, FILE-WRITE, FILE-SEEK, FILE-GET-INFO, and
-      FILE-SETSIZE requests, and FILE-INFO repose.
+      FILE-SET-SIZE requests, and FILE-INFO repose.
     * Defined the new LIST-DIR and GET-DIR-ENTRY requests.
     * Defined the new REMOVE, RENAME, and MKDIR requests.
     * Renamed STORAGE-CLOSE to FILE-CLOSE.  The semantics of the operation
@@ -685,7 +685,7 @@ Possible responses: FILE-INFO, ERROR
 In the FILE-INFO response, the network adapter MUST set the name-length
 field to 0 and MUST NOT return the file name.
 
-### FILE-SETSIZE
+### FILE-SET-SIZE
 
 Set the size of a file associated with a file descriptor.  If the new
 size is larger than the current size of the underlying storage object,
