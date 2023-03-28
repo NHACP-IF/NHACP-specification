@@ -187,10 +187,9 @@ explicitly here.
     * Redefined the DATE-TIME response message to use the DATE-TIME structure.
       Layout of the message is backwards-compatible.
     * Defined the new UINT8-VALUE, UINT16-VALUE, and UINT32-VALUE responses.
-    * Defined the new FILE-READ, FILE-WRITE, FILE-SEEK, FILE-GETATTR, and
-      FILE-SETSIZE requests, and FILE-ATTRS response.
-    * Defined the new LIST-DIR and GET-DIR-ENTRY requests and DIR-ENTRY
-      response.
+    * Defined the new FILE-READ, FILE-WRITE, FILE-SEEK, FILE-GET-INFO, and
+      FILE-SETSIZE requests, and FILE-INFO repose.
+    * Defined the new LIST-DIR and GET-DIR-ENTRY requests.
     * Defined the new REMOVE, RENAME, and MKDIR requests.
     * Renamed STORAGE-CLOSE to FILE-CLOSE.  The semantics of the operation
       are unchanged.
@@ -672,7 +671,7 @@ measured in bytes from the beginning of the file.
 If the underlying file object does not have a cursor that can be respositioned,
 then FILE-SEEK MUST fail with an ESEEK error.
 
-### FILE-GETATTR
+### FILE-GET-INFO
 
 Get the attributes of the file associated with a file descriptor.
 
@@ -681,7 +680,10 @@ Get the attributes of the file associated with a file descriptor.
 | type   | u8   | 0x0c                      |
 | index  | u8   | File descriptor to access |
 
-Possible responses: FILE-ATTRS, ERROR
+Possible responses: FILE-INFO, ERROR
+
+In the FILE-INFO response, the network adapter MUST set the name-length
+field to 0 and MUST NOT return the file name.
 
 ### FILE-SETSIZE
 
@@ -730,7 +732,7 @@ advances the directory cursor.
 | index           | u8    | File descriptor of directory that has been listed |
 | max-name-length | u8    | Maximum length of the returned file name          |
 
-Possible responses: OK, DIR-ENTRY, ERROR
+Possible responses: OK, FILE-INFO, ERROR
 
 If there are no more entries to return, or if the listing has not been
 generated, the server MUST repond with OK to indicate the end-of-directory.
@@ -899,7 +901,7 @@ All other error codes are reserved.
 | type      | u8        | 0x85                  |
 | date_time | DATE-TIME | Current date and time |
 
-### DIR-ENTRY
+### FILE-INFO
 
 | Name        | Type       | Notes                        |
 |-------------|------------|------------------------------|
