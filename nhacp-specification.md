@@ -188,7 +188,7 @@ explicitly here.
       Layout of the message is backwards-compatible.
     * Defined the new UINT8-VALUE, UINT16-VALUE, and UINT32-VALUE responses.
     * Defined the new FILE-READ, FILE-WRITE, FILE-SEEK, FILE-GET-INFO, and
-      FILE-SET-SIZE requests, and FILE-INFO repose.
+      FILE-SET-SIZE requests, and FILE-INFO response.
     * Defined the new LIST-DIR and GET-DIR-ENTRY requests.
     * Defined the new REMOVE, RENAME, and MKDIR requests.
     * Renamed STORAGE-CLOSE to FILE-CLOSE.  The semantics of the operation
