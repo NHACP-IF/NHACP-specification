@@ -229,8 +229,8 @@ network adapter.
 ## Complex aggregate types
 
 In addition to the simple scalar types (u8, u16, u32) and simple aggregate
-types (char/byte arrays), there are some complex aggregate types used in
-NHACP that are shared by multiple request/response messages.
+types (byte arrays), there are some complex aggregate types used in NHACP
+that are shared by multiple request/response messages.
 
 ### DATE-TIME structure
 
@@ -258,6 +258,22 @@ reserved.
 | SPEC | 0x0008 | File is a "special" file |
 
 A "special" file is a file that is not a regular file nor a directory.
+
+### STRING structure
+
+| Name   | Type  | Notes                                  |
+|--------|-------|----------------------------------------|
+| length | u8    | Total length of the string bytes field |
+| bytes  | char* | String bytes                           |
+
+The length field of a STRING defines the length of the bytes field.
+Client applications MAY early-terminate the string using a 0-byte;
+if a client application does so, the network adapter MUST consider
+only the bytes preceeding the 0-byte when using the string.  The
+length field MUST be used to locate additional message fields that
+follow the STRING field.  In order to reduce computational complexity
+in client applications when processing responses, network adapters
+MUST NOT early-terminate strings with a 0-byte.
 
 ## Request messages
 
@@ -340,11 +356,10 @@ request MUST return an ERROR response with the error code EBUSY.
 
 | Name       | Type  | Notes                                                                 |
 |------------|-------|-----------------------------------------------------------------------|
-| type       | u8    | 0x01                                                                  |
-| index      | u8    | File descriptor to use for response (0xff => Network Adapter selects) |
-| flags      | u16   | Flags to pass to storage handler                                      |
-| url-length | u8    | Length of resource in bytes                                           |
-| url        | char* | URL String                                                            |
+| type       | u8     | 0x01                                                                  |
+| index      | u8     | File descriptor to use for response (0xff => Network Adapter selects) |
+| flags      | u16    | Flags to pass to storage handler                                      |
+| url        | STRING | URL / file name string                                                |
 
 Possible responses: STORAGE-LOADED, ERROR
 
@@ -682,8 +697,8 @@ Get the attributes of the file associated with a file descriptor.
 
 Possible responses: FILE-INFO, ERROR
 
-In the FILE-INFO response, the network adapter MUST set the name-length
-field to 0 and MUST NOT return the file name.
+In the FILE-INFO response, the network adapter MUST set the length
+of the name string to 0 and omit the file name.
 
 ### FILE-SET-SIZE
 
@@ -709,12 +724,11 @@ requests.  The directory must have already been opened.  Any cached listing
 is released upon a subsequent LIST-DIR or FILE-CLOSE request for that
 file descriptor.
 
-| Name           | Type  | Notes                                   |
-|----------------|-------|-----------------------------------------|
-| type           | u8    | 0x0e                                    |
-| index          | u8    | File descriptor of directory to list    |
-| pattern-length | u8    | Legth of the file name matching pattern |
-| pattern        | char* | File name matching pattern              |
+| Name           | Type   | Notes                                   |
+|----------------|--------|-----------------------------------------|
+| type           | u8     | 0x0e                                    |
+| index          | u8     | File descriptor of directory to list    |
+| pattern        | STRING | File name matching pattern              |
 
 Possible responses: OK, ERROR
 
@@ -745,12 +759,11 @@ the max-name-length specifed by the application.
 Remove the specified file or directory.  If removing a directory, the
 directory must be empty.
 
-| Name       | Type  | Notes                       |
-|------------|-------|-----------------------------|
-| type       | u8    | 0x10                        |
-| flags      | u16   | Flags                       |
-| url-length | u8    | Length of resource in bytes |
-| url        | char* | URL String                  |
+| Name       | Type   | Notes                             |
+|------------|--------|-----------------------------------|
+| type       | u8     | 0x10                              |
+| flags      | u16    | Flags                             |
+| url        | STRING | URL / file name of file to remove |
 
 Possible responses: OK, ERROR
 
@@ -771,13 +784,11 @@ SHOULD make a best-effort to ensure the atomicity of the RENAME operation,
 it is not guaranteed; a RENAME operation over an existing file object MAY
 result in that object being removed even if the rename itself fails.
 
-| Name            | Type  | Notes                  |
-|-----------------|-------|------------------------|
-| type            | u8    | 0x11                   |
-| old-url-length  | u8    | Length of the old name |
-| old-url         | char* | Old name               |
-| new-url-length  | u8    | Length of the new name |
-| new-url         | char* | New name               |
+| Name            | Type   | Notes               |
+|-----------------|--------|---------------------|
+| type            | u8     | 0x11                |
+| old-url         | STRING | Old name / location |
+| new-url         | STRING | New name / location |
 
 Possible responses: OK, ERROR
 
@@ -785,11 +796,10 @@ Possible responses: OK, ERROR
 
 Create a directory at the specified location.
 
-| Name       | Type  | Notes                       |
-|------------|-------|-----------------------------|
-| type       | u8    | 0x12                        |
-| url-length | u8    | Length of resource in bytes |
-| url        | char* | URL String                  |
+| Name       | Type   | Notes      |
+|------------|--------|------------|
+| type       | u8     | 0x12       |
+| url        | STRING | URL string |
 
 Possible responses: OK, ERROR
 
@@ -814,13 +824,12 @@ must be consecutive to support fast dispatching on the type byte.
 
 ### SESSION-STARTED
 
-| Name              | Type  | Notes                                   |
-|-------------------|-------|-----------------------------------------|
-| type              | u8    | 0x80                                    |
-| session_id        | u8    | Session ID of the new session           |
-| version           | u16   | Version number of the protocol          |
-| adapter-id-length | u8    | Length of adapter identification string |
-| adapter-id        | char* | Adapter identification string           |
+| Name              | Type   | Notes                          |
+|-------------------|--------|--------------------------------|
+| type              | u8     | 0x80                           |
+| session_id        | u8     | Session ID of the new session  |
+| version           | u16    | Version number of the protocol |
+| adapter-id        | STRING | Adapter identification string  |
 
 If the client specified the SYSTEM session in the HELLO request, then
 the network adapter MUST return the SYSTEM session ID in the SESSION-STARTED
@@ -838,16 +847,15 @@ field.
 
 ### ERROR
 
-| Name           | Type  | Notes                   |
-|----------------|-------|-------------------------|
-| type           | u8    | 0x82                    |
-| code           | u16   | Error code              |
-| message-length | u8    | Length of error message |
-| message        | char* | Error message           |
+| Name           | Type   | Notes         |
+|----------------|--------|---------------|
+| type           | u8     | 0x82          |
+| code           | u16    | Error code    |
+| message        | STRING | Error message |
 
 In an ERROR response to any request other than GET-ERROR-DETAILS,
-the network adapter MUST set the message-length field to 0 and omit
-the detailed error message.
+the network adapter MUST set the length of the message string to 0
+and omit the detailed error message.
 
 The following error codes are defined:
 
@@ -903,12 +911,11 @@ All other error codes are reserved.
 
 ### FILE-INFO
 
-| Name        | Type       | Notes                        |
-|-------------|------------|------------------------------|
-| type        | u8         | 0x86                         |
-| attrs       | FILE-ATTRS | File attributes              |
-| name-length | u8         | Length of returned file name |
-| name        | char*      | File name                    |
+| Name        | Type       | Notes           |
+|-------------|------------|-----------------|
+| type        | u8         | 0x86            |
+| attrs       | FILE-ATTRS | File attributes |
+| name        | STRING     | File name       |
 
 ### UINT8-VALUE
 
