@@ -734,8 +734,11 @@ file descriptor.
 
 Possible responses: OK, ERROR
 
-The network adapter SHOULD implement file name matching compatible with
-the IEEE Std 1003.2 for the glob() function.
+If the length of the pattern string is 0, then the network adapter MUST
+list the entire directory.  Otherwise, the network adapter MUST list
+only entries matching the specified pattern.  The network adapter SHOULD
+implement pattern matching compatible with the glob() function specified
+by IEEE Std 1003.2.
 
 ### GET-DIR-ENTRY
 
