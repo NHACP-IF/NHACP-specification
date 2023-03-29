@@ -183,7 +183,9 @@ explicitly here.
     * Defined new ERROR response behavior and GET-ERROR-DETAILS request.
     * Defined the new STORAGE-GET-BLOCK and STORAGE-PUT-BLOCK requests.
     * Added section about complex aggregate types, and added definitions
-      for the DATE-TIME structure and the FILE-ATTRS structure.
+      for the DATE-TIME, FILE-ATTRS, and STRING structures.
+    * Redefined messages containing strings to use the new STRING
+      structure.  Layout of those messages is backwards-compatible.
     * Redefined the DATE-TIME response message to use the DATE-TIME structure.
       Layout of the message is backwards-compatible.
     * Defined the new UINT8-VALUE, UINT16-VALUE, and UINT32-VALUE responses.
