@@ -408,6 +408,11 @@ MUST buffer that object locally such that random access to the object
 using the STORAGE-GET and STORAGE-GET-BLOCK requests is possible.  The
 network adapter SHOULD treat such objects as read-only.
 
+If the length of the URL string is 0, the network adapter MUST interpret
+the request as a request to open the top-level directory.  The usual rules
+for opening directories apply; the client MUST also specify the O_DIRECTORY
+flag in the request.
+
 ### STORAGE-GET
 
 Get data from network adapter storage.
