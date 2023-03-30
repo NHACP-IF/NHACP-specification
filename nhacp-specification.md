@@ -277,6 +277,8 @@ follow the STRING field.  In order to reduce computational complexity
 in client applications when processing responses, network adapters
 MUST NOT early-terminate strings with a 0-byte.
 
+---
+
 ## Request messages
 
 ### HELLO
@@ -343,7 +345,7 @@ return an ERROR response with the error code ENOTSUP.
 
 ### STORAGE-OPEN
 
-Open a URL and assign a storage index to it.  The URL can be relative
+Open a URL and assign a file descriptor to it.  The URL can be relative
 or a file URL to open a local file.  Network adapters may implement
 additional, nonstandard URL schemes.  Relative URLs are interpreted 
 as files.  The flags field can be used to pass additional information
@@ -356,12 +358,12 @@ adapter will attempt to allocate a file descriptor.  If the requested
 file descriptor is already in-use by another file object, the STORAGE-OPEN
 request MUST return an ERROR response with the error code EBUSY.
 
-| Name       | Type  | Notes                                                                 |
-|------------|-------|-----------------------------------------------------------------------|
-| type       | u8     | 0x01                                                                  |
-| index      | u8     | File descriptor to use for response (0xff => Network Adapter selects) |
-| flags      | u16    | Flags to pass to storage handler                                      |
-| url        | STRING | URL / file name string                                                |
+| Name      | Type   | Notes                                                              |
+|-----------|--------|--------------------------------------------------------------------|
+| type      | u8     | 0x01                                                               |
+| req-fdesc | u8     | Requested file descriptor to use (0xff => Network Adapter selects) |
+| flags     | u16    | Open flags                                                         |
+| url       | STRING | URL / file name string                                             |
 
 Possible responses: STORAGE-LOADED, ERROR
 
@@ -397,7 +399,7 @@ storage object is opened with O_RDWP the open MUST succeed, but any
 attempt to write to or otherwise modify the object MUST return an EROFS
 error.
 
-While NHACP-0.0 had a slot allocated in the STORAGE-OPEN request for flags,
+While NHACP-0.0 had space allocated in the STORAGE-OPEN request for flags,
 it did not define any flags.  Network adapters that support NHACP-0.0
 SHOULD ignore the flags field and assume O_RDWP+O_CREAT for NHACP-0.0
 sessions.
@@ -424,7 +426,7 @@ STORAGE-GET requests whose length field exceeds this value.
 | Name   | Type | Notes                            |
 |--------|------|----------------------------------|
 | type   | u8   | 0x02                             |
-| index  | u8   | File descriptor to access        |
+| fdesc  | u8   | File descriptor to access        |
 | offset | u32  | Offset into the storage in bytes |
 | length | u16  | Number of bytes to return        |
 
@@ -454,7 +456,7 @@ STORAGE-PUT requests whose length field exceeds this value.
 | Name   | Type | Notes                            |
 |--------|------|----------------------------------|
 | type   | u8   | 0x03                             |
-| index  | u8   | File descriptor to access        |
+| fdesc  | u8   | File descriptor to access        |
 | offset | u32  | Offset into the storage in bytes |
 | length | u16  | Number of bytes to write         |
 | data   | u8*  | Data to update the storage with  |
@@ -497,7 +499,7 @@ it on the network adapter will be freed.
 | Name  | Type | Notes                    |
 |-------|------|--------------------------|
 | type  | u8   | 0x05                     |
-| index | u8   | File descriptor to close |
+| fdesc | u8   | File descriptor to close |
 
 No response message is returned by the network adapter.  If the server
 receives a file descriptor that is not currently in use by the client,
@@ -546,7 +548,7 @@ STORAGE-GET requests whose length field exceeds this value.
 | Name         | Type | Notes                            |
 |--------------|------|----------------------------------|
 | type         | u8   | 0x07                             |
-| index        | u8   | File descriptor to access        |
+| fdesc        | u8   | File descriptor to access        |
 | block-number | u32  | 0-based index of block to access |
 | block-length | u16  | Length of the block              |
 
@@ -575,7 +577,7 @@ STORAGE-PUT requests whose length field exceeds this value.
 | Name         | Type | Notes                            |
 |--------------|------|----------------------------------|
 | type         | u8   | 0x08                             |
-| index        | u8   | File descriptor to access        |
+| fdesc        | u8   | File descriptor to access        |
 | block-number | u32  | 0-based index of block to access |
 | block-length | u16  | Length of the block              |
 | data         | u8*  | Data to update the storage with  |
@@ -608,12 +610,12 @@ The maximum payload langth for a FILE-READ is 8192 bytes.  Network
 adapters MUST return an error for FILE-READ requests whose length
 field exceeds this value.
 
-| Name   | Type | Notes                            |
-|--------|------|----------------------------------|
-| type   | u8   | 0x09                             |
-| index  | u8   | File descriptor to access        |
-| flags  | u16  | Flags                            |
-| length | u16  | Number of bytes to return        |
+| Name   | Type | Notes                     |
+|--------|------|---------------------------|
+| type   | u8   | 0x09                      |
+| fdesc  | u8   | File descriptor to access |
+| flags  | u16  | Flags                     |
+| length | u16  | Number of bytes to return |
 
 Possible responses: DATA-BUFFER, ERROR
 
@@ -637,13 +639,13 @@ The maximum payload langth for a FILE-WRITE is 8192 bytes.  Network
 adapters MUST return an error for FILE-WRITE requests whose length
 field exceeds this value.
 
-| Name   | Type | Notes                            |
-|--------|------|----------------------------------|
-| type   | u8   | 0x0a                             |
-| index  | u8   | File descriptor to access        |
-| flags  | u16  | Flags                            |
-| length | u16  | Number of bytes to write         |
-| data   | u8*  | Data to update the storage with  |
+| Name   | Type | Notes                           |
+|--------|------|---------------------------------|
+| type   | u8   | 0x0a                            |
+| fdesc  | u8   | File descriptor to access       |
+| flags  | u16  | Flags                           |
+| length | u16  | Number of bytes to write        |
+| data   | u8*  | Data to update the storage with |
 
 Possible responses: OK, ERROR
 
@@ -670,12 +672,12 @@ Errors are returned with the following priority:
 Re-position the file cursor by a signed offset relative to the specified
 seek origin.
 
-| Name   | Type | Notes                            |
-|--------|------|----------------------------------|
-| type   | u8   | 0x0b                             |
-| index  | u8   | File descriptor to access        |
-| offset | s32  | Offset relative to seek origin   |
-| whence | u8   | The origin of the seek           |
+| Name   | Type | Notes                          |
+|--------|------|--------------------------------|
+| type   | u8   | 0x0b                           |
+| fdesc  | u8   | File descriptor to access      |
+| offset | s32  | Offset relative to seek origin |
+| whence | u8   | The origin of the seek         |
 
 Possible responses: UINT32-VALUE, ERROR
 
@@ -700,7 +702,7 @@ Get the attributes of the file associated with a file descriptor.
 | Name   | Type | Notes                     |
 |--------|------|---------------------------|
 | type   | u8   | 0x0c                      |
-| index  | u8   | File descriptor to access |
+| fdesc  | u8   | File descriptor to access |
 
 Possible responses: FILE-INFO, ERROR
 
@@ -717,7 +719,7 @@ end-of-file and the new end-of-file.
 | Name  | Type | Notes                     |
 |-------|------|---------------------------|
 | type  | u8   | 0x0d                      |
-| index | u8   | File descriptor to access |
+| fdesc | u8   | File descriptor to access |
 | size  | u32  | New file size             |
 
 Possible responses: OK, ERROR
@@ -731,11 +733,11 @@ requests.  The directory must have already been opened.  Any cached listing
 is released upon a subsequent LIST-DIR or FILE-CLOSE request for that
 file descriptor.
 
-| Name           | Type   | Notes                                   |
-|----------------|--------|-----------------------------------------|
-| type           | u8     | 0x0e                                    |
-| index          | u8     | File descriptor of directory to list    |
-| pattern        | STRING | File name matching pattern              |
+| Name    | Type   | Notes                                |
+|---------|--------|--------------------------------------|
+| type    | u8     | 0x0e                                 |
+| fdesc   | u8     | File descriptor of directory to list |
+| pattern | STRING | File name matching pattern           |
 
 Possible responses: OK, ERROR
 
@@ -753,7 +755,7 @@ advances the directory cursor.
 | Name            | Type  | Notes                                             |
 |-----------------|-------|---------------------------------------------------|
 | type            | u8    | 0x0f                                              |
-| index           | u8    | File descriptor of directory that has been listed |
+| fdesc           | u8    | File descriptor of directory that has been listed |
 | max-name-length | u8    | Maximum length of the returned file name          |
 
 Possible responses: OK, FILE-INFO, ERROR
@@ -769,11 +771,11 @@ the max-name-length specifed by the application.
 Remove the specified file or directory.  If removing a directory, the
 directory must be empty.
 
-| Name       | Type   | Notes                             |
-|------------|--------|-----------------------------------|
-| type       | u8     | 0x10                              |
-| flags      | u16    | Flags                             |
-| url        | STRING | URL / file name of file to remove |
+| Name  | Type   | Notes                             |
+|-------|--------|-----------------------------------|
+| type  | u8     | 0x10                              |
+| flags | u16    | Flags                             |
+| url   | STRING | URL / file name of file to remove |
 
 Possible responses: OK, ERROR
 
@@ -794,11 +796,11 @@ SHOULD make a best-effort to ensure the atomicity of the RENAME operation,
 it is not guaranteed; a RENAME operation over an existing file object MAY
 result in that object being removed even if the rename itself fails.
 
-| Name            | Type   | Notes               |
-|-----------------|--------|---------------------|
-| type            | u8     | 0x11                |
-| old-url         | STRING | Old name / location |
-| new-url         | STRING | New name / location |
+| Name    | Type   | Notes               |
+|---------|--------|---------------------|
+| type    | u8     | 0x11                |
+| old-url | STRING | Old name / location |
+| new-url | STRING | New name / location |
 
 Possible responses: OK, ERROR
 
@@ -806,10 +808,10 @@ Possible responses: OK, ERROR
 
 Create a directory at the specified location.
 
-| Name       | Type   | Notes      |
-|------------|--------|------------|
-| type       | u8     | 0x12       |
-| url        | STRING | URL string |
+| Name | Type   | Notes      |
+|------|--------|------------|
+| type | u8     | 0x12       |
+| url  | STRING | URL string |
 
 Possible responses: OK, ERROR
 
@@ -826,6 +828,8 @@ that the operating system is performing an orderly shutdown.
 No response message is returned by the network adapter.  If the GOODBYE
 request arrives with an unknown session ID, the network adapter MUST ignore
 the request.
+
+---
 
 ## Response messages
 
@@ -898,11 +902,11 @@ All other error codes are reserved.
 
 ### STORAGE-LOADED
 
-| Name   | Type | Notes                                       |
-|--------|------|---------------------------------------------|
-| type   | u8   | 0x83                                        |
-| index  | u8   | Storage index that was provided or selected |
-| length | u32  | Length of the underlying storage object     |
+| Name   | Type | Notes                                         |
+|--------|------|-----------------------------------------------|
+| type   | u8   | 0x83                                          |
+| fdesc  | u8   | File descriptor that was provided or selected |
+| length | u32  | Length of the underlying storage object       |
 
 ### DATA-BUFFER
 
@@ -954,6 +958,8 @@ All other error codes are reserved.
 |-------------|------------|-----------------|
 | type        | u8         | 0x8a            |
 | attrs       | FILE-ATTRS | File attributes |
+
+---
 
 ## Recovering from a crash
 
