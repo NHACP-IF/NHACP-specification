@@ -112,7 +112,7 @@ If the client sends a request with an unknown session ID, the server MUST
 return an ERROR response with the error code ESRCH.
 
 If the CRC8 option is enabled in the HELLO request, then all NHACP messages
-(including the HELLO request) have a 1-byte CRC-8/WCDMA appended to the end
+(including the HELLO request) have a 1-byte CRC-8/CDMA2000 appended to the end
 of the message.  This byte MUST be counted in the length field of the message.
 For request messages, the CRC calculation includes the request header.
 If the CRC8 option is enabled and the CRC field is zero, then then the CRC
@@ -195,7 +195,7 @@ explicitly here.
     * Defined the new REMOVE, RENAME, and MKDIR requests.
     * Renamed STORAGE-CLOSE to FILE-CLOSE.  The semantics of the operation
       are unchanged.
-    * Added the optional CRC-8/WCDMA error detection.
+    * Added the optional CRC-8/CDMA2000 error detection.
 * Version 0.0 - Initial version
 
 The HELLO request and the SESSION-STARTED respose each include a 16-bit
@@ -334,7 +334,7 @@ The following options are defined:
 
 | Name | Value  | Notes                              |
 |------|--------|------------------------------------|
-| CRC8 | 0x0001 | Enable CRC-8/WCDMA error detection |
+| CRC8 | 0x0001 | Enable CRC-8/CDMA2000 error detection |
 
 All other option bits are reserved.
 
@@ -1114,11 +1114,11 @@ used for readability.
 |                          | 0x20                               |
 |                          | "C.DSK: no such file or directory" |
 
-### CRC-8/WCDMA Test Vectors
+### CRC-8/CDMA2000 Test Vectors
 
 * "The quick brown fox jumps over the lazy dog."
     * Length: 44
-    * CRC: 0xfd
+    * CRC: 0xbc
 * "NABU HCCA application communication protocol"
     * Length: 44
-    * CRC: 0xe7
+    * CRC: 0x53
