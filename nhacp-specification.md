@@ -18,7 +18,7 @@ adapters to support NABU applications.
 
 ## Copyright and license notice
 
-Copyright (c) 2022, 2023 Hans Hübner.
+Copyright (c) 2022, 2023 Hans Hübner.  
 Copyright (c) 2023 Jason R. Thorpe.
 
 ![CC BY-SA 4.0](https://i.creativecommons.org/l/by-sa/4.0/88x31.png)
