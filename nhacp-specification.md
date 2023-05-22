@@ -16,6 +16,16 @@ network based storage services to applications running on the NABU.
 This document proposes a unified protocol to be implemented by network
 adapters to support NABU applications.
 
+## Copyright and license notice
+
+Copyright (c) 2022, 2023 Hans Hübner.
+Copyright (c) 2023 Jason R. Thorpe.
+
+![CC BY-SA 4.0](https://i.creativecommons.org/l/by-sa/4.0/88x31.png)
+
+The NHACP specification is licensed under a
+[Creative Commons Attribution-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-sa/4.0/).
+
 ## Communication interface
 
 The NABU HCCA serial interface is an asynchronous RS422 port running
