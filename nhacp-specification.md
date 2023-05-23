@@ -1,4 +1,4 @@
-# NABU HCCA application communication protocol
+# NABU HCCA Application Communication Protocol
 
 The original NABU network adapter provided a unidirectional connection
 from the headend system to the NABUs.  Each NABU could access the
