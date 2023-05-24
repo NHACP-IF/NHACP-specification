@@ -24,4 +24,4 @@ The NHACP specification is licensed under a
 
 The NHACP specification is available [here](nhacp-specification.md).  The
 tip of the main branch will always describe the latest released version of
-the protocol, which is currently **NHACP-0.1**.
+the protocol, which is currently **NHACP-0.2**.

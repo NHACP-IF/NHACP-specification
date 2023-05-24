@@ -179,12 +179,13 @@ See the GET-ERROR-DETAILS request below.
 
 ## Protocol versioning
 
-This document describes version **0.1** of the protocol.  This
+This document describes version **0.2** of the protocol.  This
 section describes the changes between protocol revisions.  New
 revisions are backward-compatible with previous clients, to the
 extent possible; any possible compatibility issues are called out
 explicitly here.
 
+* Version 0.2
 * Version 0.1
     * Defined the protocol versioning convention.
     * Defined the new NHACP-REQUEST session mutiplexing scheme and
@@ -221,6 +222,7 @@ the version values defined here are authoritative:
 |--------|---------------------|
 | 0x0000 | initial NHACP draft |
 | 0x0001 | NHACP version 0.1   |
+| 0x0002 | NHACP version 0.2   |
 
 Historical note: NHACP-0.0's initial response, NHACP-STARTED, included
 a version field in the response which was not well-defined and, by
