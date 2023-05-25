@@ -842,15 +842,15 @@ Possible responses: UINT32-VALUE, ERROR
 
 The following properties are defined:
 
-| Name   | Value | Notes                                       |
-|--------|-------|---------------------------------------------|
-| DTYPE  | 0x00  | Descriptor type (see below)                 |
-| NBIO   | 0x01  | Non-blocking I/O 1=enabled 0=disabled       |
-| RAVAIL | 0x02  | Number of bytes available to read           |
-| WAVAIL | 0x03  | Free space (in bytes) available for writing |
-| RBUFSZ | 0x04  | Size of the read / receive buffer           |
-| WBUFSZ | 0x05  | Size of the write / send buffer             |
-| BLKSZ  | 0x06  | Device block size                           |
+| Name    | Value | Notes                                       |
+|---------|-------|---------------------------------------------|
+| DTYPE   | 0x00  | Descriptor type (see below)                 |
+| NBIO    | 0x01  | Non-blocking I/O 1=enabled 0=disabled       |
+| RAVAIL  | 0x02  | Number of bytes available to read           |
+| WAVAIL  | 0x03  | Free space (in bytes) available for writing |
+| RBUFSZ  | 0x04  | Size of the read / receive buffer           |
+| WBUFSZ  | 0x05  | Size of the write / send buffer             |
+| (BLKSZ) | 0x06  | (Reserved: Device block size)               |
 
 The following file descriptor types are defined:
 
