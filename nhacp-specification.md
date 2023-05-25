@@ -842,15 +842,22 @@ Possible responses: UINT32-VALUE, ERROR
 
 The following properties are defined:
 
-| Name    | Value | Notes                                       |
-|---------|-------|---------------------------------------------|
-| DTYPE   | 0x00  | Descriptor type (see below)                 |
-| NBIO    | 0x01  | Non-blocking I/O 1=enabled 0=disabled       |
-| RAVAIL  | 0x02  | Number of bytes available to read           |
-| WAVAIL  | 0x03  | Free space (in bytes) available for writing |
-| RBUFSZ  | 0x04  | Size of the read / receive buffer           |
-| WBUFSZ  | 0x05  | Size of the write / send buffer             |
-| (BLKSZ) | 0x06  | (Reserved: Device block size)               |
+| Name    | Value | Notes                             |
+|---------|-------|-----------------------------------|
+| DTYPE   | 0x00  | Descriptor type (see below)       |
+| NBIO    | 0x01  | Non-blocking I/O                  |
+| RBUFSZ  | 0x02  | Size of the read / receive buffer |
+| WBUFSZ  | 0x03  | Size of the write / send buffer   |
+
+The following properties are defined:
+
+* *NBIO*: 0=non-blocking I/O is disabled, 1=non-blocking I/O is enabled.
+  This is analogous to querying the O_NONBLOCK flag with fcntl(F_GETFL)
+  as defined by IEEE Std 1003.1-2017.
+* *RBUFSZ*: This is analagous to getsockopt(SO_RCVBUF) defined by
+  IEEE Std 1003.1-2017.
+* *WBUFSZ*: This is analogous to getsockopt(SO_SNDBUF) defined by
+  IEEE Std 1003.1-2017.
 
 The following file descriptor types are defined:
 
@@ -860,8 +867,6 @@ The following file descriptor types are defined:
 | DTYPE_DIR    | 0x00000001 | Directory                                   |
 | DTYPE_SSOCK  | 0x00000002 | Stream socket (e.g. TCP)                    |
 | DTYPE_DSOCK  | 0x00000003 | Datagram socket (e.g. UDP)                  |
-| (DTYPE_PIPE) | 0x00000004 | (Reserved: Pipe to network adapter service) |
-| (DTYPE_BLK)  | 0x00000005 | (Reserved: Block device (e.g. disk))        |
 
 ### FILE-SETPROP
 
