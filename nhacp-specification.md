@@ -827,6 +827,69 @@ Create a directory at the specified location.
 
 Possible responses: OK, ERROR
 
+### FILE-GETPROP
+
+Get a file descriptor property value.  If the requested property is not
+valid for the file descriptor, the request MUST fail with an EINVAL error.
+
+| Name  | Type | Notes               |
+|-------|------|---------------------|
+| type  | u8   | 0x13                |
+| fdesc | u8   | File descriptor     |
+| which | u16  | The property to get |
+
+Possible responses: UINT32-VALUE, ERROR
+
+The following properties are defined:
+
+| Name   | Value | Notes                                       |
+|--------|-------|---------------------------------------------|
+| DTYPE  | 0x00  | Descriptor type (see below)                 |
+| NBIO   | 0x01  | Non-blocking I/O 1=enabled 0=disabled       |
+| RAVAIL | 0x02  | Number of bytes available to read           |
+| WAVAIL | 0x03  | Free space (in bytes) available for writing |
+| RBUFSZ | 0x04  | Size of the read / receive buffer           |
+| WBUFSZ | 0x05  | Size of the write / send buffer             |
+| BLKSZ  | 0x06  | Device block size                           |
+
+The following file descriptor types are defined:
+
+| Name         | Value      | Notes                                       |
+|--------------|------------|---------------------------------------------|
+| DTYPE_FILE   | 0x00000000 | Regular file                                |
+| DTYPE_DIR    | 0x00000001 | Directory                                   |
+| DTYPE_SSOCK  | 0x00000002 | Stream socket (e.g. TCP)                    |
+| DTYPE_DSOCK  | 0x00000003 | Datagram socket (e.g. UDP)                  |
+| (DTYPE_PIPE) | 0x00000004 | (Reserved: Pipe to network adapter service) |
+| (DTYPE_BLK)  | 0x00000005 | (Reserved: Block device (e.g. disk))        |
+
+### FILE-SETPROP
+
+Set a file descriptor property value.  If the requested property is not
+valid for the file descriptor, the request MUST fail with an EINVAL error.
+If the requested property cannot be changed, the request MUST fail with
+with an EPERM error.  If an invalid value is specified for the property,
+the request MUST fail with an EINVAL error.
+
+| Name  | Type | Notes                  |
+|-------|------|------------------------|
+| type  | u8   | 0x14                   |
+| fdesc | u8   | File descriptor        |
+| which | u16  | The property to set    |
+| value | u32  | The new property value |
+
+The following file properties are settable:
+
+* *NBIO*: 0=disables non-blocking I/O, 1=enables non-blocking I/O.  This is
+  analogous to setting or clearing the O_NONBLOCK flag with fcntl() as
+  defined by IEEE Std 1003.1-2017.
+* *RBUFSZ*: This is analagous to setsockopt(SO_RCVBUF) defined by
+  IEEE Std 1003.1-2017.
+* *WBUFSZ*: This is analogous to setsockopt(SO_SNDBUF) defined by
+  IEEE Std 1003.1-2017.
+
+Possible responses: OK, ERROR
+
 ### GOODBYE
 
 End an NHACP session.  If the session ID specifies the SYSTEM session,
