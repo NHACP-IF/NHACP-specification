@@ -186,6 +186,7 @@ extent possible; any possible compatibility issues are called out
 explicitly here.
 
 * Version 0.2
+    * Defined the new FILE-GETPROP and FILE-SETPROP requests.
 * Version 0.1
     * Defined the protocol versioning convention.
     * Defined the new NHACP-REQUEST session mutiplexing scheme and
