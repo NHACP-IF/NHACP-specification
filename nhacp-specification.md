@@ -186,7 +186,7 @@ extent possible; any possible compatibility issues are called out
 explicitly here.
 
 * Version 0.2
-    * Defined the new FILE-GETPROP and FILE-SETPROP requests.
+    * Defined the new FILE-GETPROP, FILE-SETPROP, and FILE-POLL requests.
 * Version 0.1
     * Defined the protocol versioning convention.
     * Defined the new NHACP-REQUEST session mutiplexing scheme and
@@ -843,12 +843,12 @@ Possible responses: UINT32-VALUE, ERROR
 
 The following properties are defined:
 
-| Name    | Value | Notes                             |
-|---------|-------|-----------------------------------|
-| DTYPE   | 0x00  | Descriptor type (see below)       |
-| NBIO    | 0x01  | Non-blocking I/O                  |
-| RBUFSZ  | 0x02  | Size of the read / receive buffer |
-| WBUFSZ  | 0x03  | Size of the write / send buffer   |
+| Name   | Value | Notes                             |
+|--------|-------|-----------------------------------|
+| DTYPE  | 0x00  | Descriptor type (see below)       |
+| NBIO   | 0x01  | Non-blocking I/O                  |
+| RBUFSZ | 0x02  | Size of the read / receive buffer |
+| WBUFSZ | 0x03  | Size of the write / send buffer   |
 
 The following properties are defined:
 
@@ -864,12 +864,12 @@ The following properties are defined:
 
 The following file descriptor types are defined:
 
-| Name         | Value      | Notes                                       |
-|--------------|------------|---------------------------------------------|
-| DTYPE_FILE   | 0x00000000 | Regular file                                |
-| DTYPE_DIR    | 0x00000001 | Directory                                   |
-| DTYPE_SSOCK  | 0x00000002 | Stream socket (e.g. TCP)                    |
-| DTYPE_DSOCK  | 0x00000003 | Datagram socket (e.g. UDP)                  |
+| Name        | Value      | Notes                      |
+|-------------|------------|----------------------------|
+| DTYPE_FILE  | 0x00000000 | Regular file               |
+| DTYPE_DIR   | 0x00000001 | Directory                  |
+| DTYPE_SSOCK | 0x00000002 | Stream socket (e.g. TCP)   |
+| DTYPE_DSOCK | 0x00000003 | Datagram socket (e.g. UDP) |
 
 ### FILE-SETPROP
 
@@ -886,6 +886,8 @@ the request MUST fail with an EINVAL error.
 | which | u16  | The property to set    |
 | value | u32  | The new property value |
 
+Possible responses: OK, ERROR
+
 The following file properties are settable:
 
 * *NBIO*: 0=disables non-blocking I/O, 1=enables non-blocking I/O.  This is
@@ -896,7 +898,38 @@ The following file properties are settable:
 * *WBUFSZ*: This is analogous to setsockopt(SO_SNDBUF) defined by
   IEEE Std 1003.1-2017.
 
-Possible responses: OK, ERROR
+### FILE-POLL
+
+Polls a file descriptor for I/O events.
+
+| Name    | Type | Notes                     |
+|---------|------|---------------------------|
+| type    | u8   | 0x15                      |
+| fdesc   | u8   | File descriptor           |
+| events  | u16  | Bitmask of events to poll |
+| timeout | u32  | Timeout in miliseconds    |
+
+Possible responses: UINT16-VALUE, ERROR
+
+The following events may be polled:
+
+| Name  | Value  | Notes                                              |
+|-------|--------|----------------------------------------------------|
+| READ  | 0x0001 | Data may be read without blocking                  |
+| WRITE | 0x0002 | Data may be written without blocking               |
+| ERR   | 0x0004 | An error condition has occurred on the file object |
+
+The events that are pending on the file object are returned.  Only
+*READ* and *WRITE* need to be specied in the request; the *ERR* and
+event will always be returned if that events is pending on the file
+object regardless if it was requested.
+
+*DTYPE_FILE* and *DTYPE_DIR* objects will always return a *READ* and
+*WRITE* events when polled for those events.
+
+If a *DTYPE_SSOCK* or *DTYPE_DSOCK* objects is disconnected, polling those
+object types for *READ* and *WRITE* events will return those events so that
+the end-of-file condition can be detected on the next read or write.
 
 ### GOODBYE
 
