@@ -920,15 +920,15 @@ The following events may be polled:
 | ERR   | 0x0004 | An error condition has occurred on the file object |
 
 The events that are pending on the file object are returned.  Only
-*READ* and *WRITE* need to be specied in the request; the *ERR* and
-event will always be returned if that events is pending on the file
-object regardless if it was requested.
+READ and WRITE need to be specied in the request; the ERR event will
+always be returned if that event is pending on the file object
+regardless of it being requested.
 
-*DTYPE_FILE* and *DTYPE_DIR* objects will always return a *READ* and
-*WRITE* events when polled for those events.
+DTYPE_FILE and DTYPE_DIR objects will always return READ and WRITE
+events when polled for those events.
 
-If a *DTYPE_SSOCK* or *DTYPE_DSOCK* objects is disconnected, polling those
-object types for *READ* and *WRITE* events will return those events so that
+If a DTYPE_SSOCK or DTYPE_DSOCK object is disconnected, polling those
+object types for READ and WRITE events will return those events so that
 the end-of-file condition can be detected on the next read or write.
 
 ### GOODBYE
