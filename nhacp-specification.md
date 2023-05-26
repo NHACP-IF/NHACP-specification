@@ -931,6 +931,11 @@ If a DTYPE_SSOCK or DTYPE_DSOCK object is disconnected, polling those
 object types for READ and WRITE events will return those events so that
 the end-of-file condition can be detected on the next read or write.
 
+The READ and WRITE events provide no indication of how much data can
+be read or written; the only guarantee is that at least one byte may
+be transferred without blocking or that an end-of-file condition will
+occur.
+
 ### GOODBYE
 
 End an NHACP session.  If the session ID specifies the SYSTEM session,
