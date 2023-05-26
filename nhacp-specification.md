@@ -907,7 +907,7 @@ Polls a file descriptor for I/O events.
 | type    | u8   | 0x15                      |
 | fdesc   | u8   | File descriptor           |
 | events  | u16  | Bitmask of events to poll |
-| timeout | u32  | Timeout in miliseconds    |
+| timeout | u32  | Timeout in milliseconds    |
 
 Possible responses: UINT16-VALUE, ERROR
 
@@ -935,6 +935,13 @@ The READ and WRITE events provide no indication of how much data can
 be read or written; the only guarantee is that at least one byte may
 be transferred without blocking or that an end-of-file condition will
 occur.
+
+If the timeout value is 0, then the network adapter MUST check for
+the indicated events and return immediately.  If the timeout value
+is 0xffffffff, then the network adapter MUST wait indefinitely for
+the indicated events.  Otherwise, the adapter MUST wait for the
+specified number of milliseconds; if no events are reported within
+the time specified, the network adapter MUST return an value of 0.
 
 ### GOODBYE
 
