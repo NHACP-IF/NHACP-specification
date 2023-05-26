@@ -852,6 +852,8 @@ The following properties are defined:
 
 The following properties are defined:
 
+* *DTYPE*: The type of object described by the file descriptor.  See
+  values below.
 * *NBIO*: 0=non-blocking I/O is disabled, 1=non-blocking I/O is enabled.
   This is analogous to querying the O_NONBLOCK flag with fcntl(F_GETFL)
   as defined by IEEE Std 1003.1-2017.
