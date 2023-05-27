@@ -190,6 +190,8 @@ explicitly here.
       requests.
     * Defined the ETIMEDOUT, EUNREACH, ECONNREFUSED, and ECONNRESET error
       codes.
+    * Renamed FILE-CLOSE to CLOSE, FILE-READ to READ, and FILE-WRITE to WRITE.
+      The semantics of the operation are unchanged.
 * Version 0.1
     * Defined the protocol versioning convention.
     * Defined the new NHACP-REQUEST session mutiplexing scheme and
@@ -507,7 +509,7 @@ Retrieve the current date and time from the network adapter.
 
 Possible responses: DATE-TIME, ERROR
 
-### FILE-CLOSE
+### CLOSE
 
 Close a previously opened file descriptor.  Any resources associated with
 it on the network adapter will be freed.
@@ -618,12 +620,12 @@ Errors are returned with the following priority:
   then STORAGE-PUT-BLOCK MUST fail with an ESEEK error.
 * Other implementation-defined error conditions.
 
-### FILE-READ
+### READ
 
 Read data sequentially from a file descriptor.
 
-The maximum payload langth for a FILE-READ is 8192 bytes.  Network
-adapters MUST return an error for FILE-READ requests whose length
+The maximum payload langth for a READ is 8192 bytes.  Network
+adapters MUST return an error for READ requests whose length
 field exceeds this value.
 
 | Name   | Type | Notes                     |
@@ -635,7 +637,7 @@ field exceeds this value.
 
 Possible responses: DATA-BUFFER, ERROR
 
-There are no flags currently defined for FILE-READ; all values are
+There are no flags currently defined for READ; all values are
 reserved.
 
 The length returned in the DATA-BUFFER response reflects
@@ -646,13 +648,12 @@ If the read operation would cross the object's end-of-file,
 then the length MUST be the number of bytes read before
 the end-of-file was encountered.
 
-### FILE-WRITE
+### WRITE
 
-Perform a sequential write to a file descriptor.  If possible, the
-underlying storage (file/URL) should be updated as well.
+Perform a sequential write to a file descriptor.
 
-The maximum payload langth for a FILE-WRITE is 8192 bytes.  Network
-adapters MUST return an error for FILE-WRITE requests whose length
+The maximum payload langth for a WRITE is 8192 bytes.  Network
+adapters MUST return an error for WRITE requests whose length
 field exceeds this value.
 
 | Name   | Type | Notes                           |
@@ -665,7 +666,7 @@ field exceeds this value.
 
 Possible responses: OK, ERROR
 
-There are no flags currently defined for FILE-WRITE; all values are
+There are no flags currently defined for WRITE; all values are
 reserved.
 
 If the position of the file cursor causes the write to originate at or
@@ -680,7 +681,7 @@ return an error without performing the write operation.
 Errors are returned with the following priority:
 
 * If the underlying file object was not opened with write access, then
-  FILE-WRITE MUST fail with an EBADF error.
+  WRITE MUST fail with an EBADF error.
 * Other implementation-defined error conditions.
 
 ### FILE-SEEK
@@ -746,8 +747,8 @@ This request causes the network adapter to scan a directory for file names
 matching the specified pattern, retrieve the attributes of those files,
 and cache a list of those files to be retrieved one file at a time by future
 requests.  The directory must have already been opened.  Any cached listing
-is released upon a subsequent LIST-DIR or FILE-CLOSE request for that
-file descriptor.
+is released upon a subsequent LIST-DIR or CLOSE request for that file
+descriptor.
 
 | Name    | Type   | Notes                                |
 |---------|--------|--------------------------------------|
@@ -1227,7 +1228,7 @@ used for readability.
 | 0x8f                |                       |
 | 0x01                |                       |
 | 0x02 0x00           |                       |
-| 0x05 [FILE-CLOSE]   |                       |
+| 0x05 [CLOSE]        |                       |
 | 0x00                |                       |
 
 ### Opening a 1KB file, reading 1KB of data using sequential read, closing the file
@@ -1249,7 +1250,7 @@ used for readability.
 | 0x8f                |                       |
 | 0x01                |                       |
 | 0x06 0x00           |                       |
-| 0x09 [FILE-READ]    |                       |
+| 0x09 [READ]         |                       |
 | 0x00                |                       |
 | 0x00 0x04           |                       |
 |                     | 0x03 0x04             |
@@ -1259,7 +1260,7 @@ used for readability.
 | 0x8f                |                       |
 | 0x01                |                       |
 | 0x02 0x00           |                       |
-| 0x05 [FILE-CLOSE]   |                       |
+| 0x05 [CLOSE]        |                       |
 | 0x00                |                       |
 
 ### Opening a file, error return, getting error details
