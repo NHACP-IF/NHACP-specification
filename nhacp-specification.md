@@ -186,7 +186,10 @@ extent possible; any possible compatibility issues are called out
 explicitly here.
 
 * Version 0.2
-    * Defined the new FILE-GETPROP, FILE-SETPROP, and FILE-POLL requests.
+    * Defined the new FILE-GETPROP, FILE-SETPROP, FILE-POLL, and CONNECT
+      requests.
+    * Defined the ETIMEDOUT, EUNREACH, EUNREACH, and ECONNRESET error
+      codes.
 * Version 0.1
     * Defined the protocol versioning convention.
     * Defined the new NHACP-REQUEST session mutiplexing scheme and
@@ -943,6 +946,47 @@ the indicated events.  Otherwise, the adapter MUST wait for the
 specified number of milliseconds; if no events are reported within
 the time specified, the network adapter MUST return an value of 0.
 
+### CONNECT
+
+Establishes a network connection using TCP/IP or UDP/IP.  This request
+is roughly equivalent to the combination of socket() + connect() as
+specified by IEEE Std 1003.1-2017.
+
+| Name      | Type   | Notes                     |
+|-----------|--------|---------------------------|
+| type      | u8     | 0x16                                                               |
+| req-fdesc | u8     | Requested file descriptor to use (0xff => Network Adapter selects) |
+| timeout   | u32    | Timeout in milliseconds                                            |
+| flags     | u16    | Option flags                                                       |
+| port      | u16    | TCP or UDP port                                                    |
+| hostname  | STRING | Connection target                                                  |
+
+Possible responses: UINT8-VALUE, ERROR.
+
+The following flags are defined:
+
+| Name       | Value  | Notes                                                  |
+|------------|--------|--------------------------------------------------------|
+| O_NONBLOCK | 0x0080 | Enable non-blocking mode on the resulting file descriptor |
+| O_DGRAM    | 0x1000 | 1=Establish a datagram connection, 0=stream connection    |
+
+The CONNECT request creates a socket object and establishes a connection
+to the specified port on the specified host.  If a connection cannot be
+established within the time specified by the timeout argument, then the
+request MUST fail with an error of ETIMEDOUT.  If the timeout argument is
+0, the network adapter MUST select a default connection timeout period,
+the value of which is left to the discretion of the network adapter
+implementation (values in the range of 45-90 seconds are typical, and a
+network adapter may choose to expose this as a configuration option).  A
+timeout value of 0xffffffff is invalid and MUST result in an EINVAL error.
+
+If the O_DGRAM flag is specified, a UDP connection will be established.
+Otherwise, a TCP connection will be established.
+
+If the host is unreachable for any reason, the network adapter SHOULD return
+an EUNREACH error.  If the network peer refuses the connection, the server
+SHOULD return an ECONNREFUSED error.
+
 ### GOODBYE
 
 End an NHACP session.  If the session ID specifies the SYSTEM session,
@@ -1001,30 +1045,34 @@ and omit the detailed error message.
 
 The following error codes are defined:
 
-| Name      | Value | Notes                             |
-|-----------|-------|-----------------------------------|
-| undefined | 0     | undefined generic error           |
-| ENOTSUP   | 1     | Operation is not supported        |
-| EPERM     | 2     | Operation is not permitted        |
-| ENOENT    | 3     | Requested file does not exist     |
-| EIO       | 4     | Input/output error                |
-| EBADF     | 5     | Bad file descriptor               |
-| ENOMEM    | 6     | Out of memory                     |
-| EACCES    | 7     | Access denied                     |
-| EBUSY     | 8     | File is busy                      |
-| EEXIST    | 9     | File already exists               |
-| EISDIR    | 10    | File is a directory               |
-| EINVAL    | 11    | Invalid argument/request          |
-| ENFILE    | 12    | Too many open files               |
-| EFBIG     | 13    | File is too large                 |
-| ENOSPC    | 14    | Out of space                      |
-| ESEEK     | 15    | Seek on non-seekable file         |
-| ENOTDIR   | 16    | File is not a directory           |
-| ENOTEMPTY | 17    | Directory is not empty            |
-| ESRCH     | 18    | No such process or session        |
-| ENSESS    | 19    | Too many sessions                 |
-| EAGAIN    | 20    | Try again later                   |
-| EROFS     | 21    | Storage object is write-protected |
+| Name         | Value | Notes                             |
+|--------------|-------|-----------------------------------|
+| undefined    | 0     | undefined generic error           |
+| ENOTSUP      | 1     | Operation is not supported        |
+| EPERM        | 2     | Operation is not permitted        |
+| ENOENT       | 3     | Requested file does not exist     |
+| EIO          | 4     | Input/output error                |
+| EBADF        | 5     | Bad file descriptor               |
+| ENOMEM       | 6     | Out of memory                     |
+| EACCES       | 7     | Access denied                     |
+| EBUSY        | 8     | File is busy                      |
+| EEXIST       | 9     | File already exists               |
+| EISDIR       | 10    | File is a directory               |
+| EINVAL       | 11    | Invalid argument/request          |
+| ENFILE       | 12    | Too many open files               |
+| EFBIG        | 13    | File is too large                 |
+| ENOSPC       | 14    | Out of space                      |
+| ESEEK        | 15    | Seek on non-seekable file         |
+| ENOTDIR      | 16    | File is not a directory           |
+| ENOTEMPTY    | 17    | Directory is not empty            |
+| ESRCH        | 18    | No such process or session        |
+| ENSESS       | 19    | Too many sessions                 |
+| EAGAIN       | 20    | Try again later                   |
+| EROFS        | 21    | Storage object is write-protected |
+| ETIMEDOUT    | 22    | Operation timed out               |
+| EUNREACH     | 23    | Network peer is unreachable       |
+| ECONNREFUSED | 24    | Connection refused by peer        |
+| ECONNRESET   | 25    | Connection reset by peer          |
 
 All other error codes are reserved.
 
