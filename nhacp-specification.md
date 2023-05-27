@@ -186,9 +186,9 @@ extent possible; any possible compatibility issues are called out
 explicitly here.
 
 * Version 0.2
-    * Defined the new FILE-GETPROP, FILE-SETPROP, FILE-POLL, and CONNECT
+    * Defined the new FILE-GETPROP, FILE-SETPROP, POLL, and CONNECT
       requests.
-    * Defined the ETIMEDOUT, EUNREACH, EUNREACH, and ECONNRESET error
+    * Defined the ETIMEDOUT, EUNREACH, ECONNREFUSED, and ECONNRESET error
       codes.
 * Version 0.1
     * Defined the protocol versioning convention.
@@ -901,7 +901,7 @@ The following file properties are settable:
 * *WBUFSZ*: This is analogous to setsockopt(SO_SNDBUF) defined by
   IEEE Std 1003.1-2017.
 
-### FILE-POLL
+### POLL
 
 Polls a file descriptor for I/O events.
 
