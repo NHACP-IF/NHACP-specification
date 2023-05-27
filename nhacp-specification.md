@@ -186,7 +186,7 @@ extent possible; any possible compatibility issues are called out
 explicitly here.
 
 * Version 0.2
-    * Defined the new FILE-GETPROP, FILE-SETPROP, POLL, and CONNECT
+    * Defined the new FDESC-GETPROP, FDESC-SETPROP, POLL, and CONNECT
       requests.
     * Defined the ETIMEDOUT, EUNREACH, ECONNREFUSED, and ECONNRESET error
       codes.
@@ -831,7 +831,7 @@ Create a directory at the specified location.
 
 Possible responses: OK, ERROR
 
-### FILE-GETPROP
+### FDESC-GETPROP
 
 Get a file descriptor property value.  If the requested property is not
 valid for the file descriptor, the request MUST fail with an EINVAL error.
@@ -874,7 +874,7 @@ The following file descriptor types are defined:
 | DTYPE_SSOCK | 0x00000002 | Stream socket (e.g. TCP)   |
 | DTYPE_DSOCK | 0x00000003 | Datagram socket (e.g. UDP) |
 
-### FILE-SETPROP
+### FDESC-SETPROP
 
 Set a file descriptor property value.  If the requested property is not
 valid for the file descriptor, the request MUST fail with an EINVAL error.
