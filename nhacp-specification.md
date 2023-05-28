@@ -886,12 +886,11 @@ The following properties are defined:
 
 The following file descriptor types are defined:
 
-| Name        | Value      | Notes                      |
-|-------------|------------|----------------------------|
-| DTYPE_FILE  | 0x00000000 | Regular file               |
-| DTYPE_DIR   | 0x00000001 | Directory                  |
-| DTYPE_SSOCK | 0x00000002 | Stream socket (e.g. TCP)   |
-| DTYPE_DSOCK | 0x00000003 | Datagram socket (e.g. UDP) |
+| Name       | Value      | Notes                    |
+|------------|------------|--------------------------|
+| DTYPE_FILE | 0x00000000 | Regular file             |
+| DTYPE_DIR  | 0x00000001 | Directory                |
+| DTYPE_SOCK | 0x00000002 | Stream socket (e.g. TCP) |
 
 ### FDESC-SETPROP
 
@@ -920,51 +919,6 @@ The following file properties are settable:
 * *WBUFSZ*: This is analogous to setsockopt(SO_SNDBUF) defined by
   IEEE Std 1003.1-2017.
 
-### POLL
-
-Polls a file descriptor for I/O events.
-
-| Name    | Type | Notes                     |
-|---------|------|---------------------------|
-| type    | u8   | 0x15                      |
-| fdesc   | u8   | File descriptor           |
-| events  | u16  | Bitmask of events to poll |
-| timeout | u32  | Timeout in milliseconds    |
-
-Possible responses: UINT16-VALUE, ERROR
-
-The following events may be polled:
-
-| Name  | Value  | Notes                                              |
-|-------|--------|----------------------------------------------------|
-| READ  | 0x0001 | Data may be read without blocking                  |
-| WRITE | 0x0002 | Data may be written without blocking               |
-| ERR   | 0x0004 | An error condition has occurred on the file object |
-
-The events that are pending on the file object are returned.  Only
-READ and WRITE need to be specied in the request; the ERR event will
-always be returned if that event is pending on the file object
-regardless of it being requested.
-
-DTYPE_FILE and DTYPE_DIR objects will always return READ and WRITE
-events when polled for those events.
-
-If a DTYPE_SSOCK or DTYPE_DSOCK object is disconnected, polling those
-object types for READ and WRITE events will return those events so that
-the end-of-file condition can be detected on the next read or write.
-
-The READ and WRITE events provide no indication of how much data can
-be read or written; the only guarantee is that at least one byte may
-be transferred without blocking or that an end-of-file condition will
-occur.
-
-If the timeout value is 0, then the network adapter MUST check for
-the indicated events and return immediately.  If the timeout value
-is 0xffffffff, then the network adapter MUST wait indefinitely for
-the indicated events.  Otherwise, the adapter MUST wait for the
-specified number of milliseconds; if no events are reported within
-the time specified, the network adapter MUST return an value of 0.
-
 ### CONNECT
 
 Establishes a network connection using TCP over IPv4 or IPv6.  This
@@ -973,11 +927,11 @@ as specified by IEEE Std 1003.1-2017.
 
 | Name      | Type   | Notes                     |
 |-----------|--------|---------------------------|
-| type      | u8     | 0x16                                                               |
+| type      | u8     | 0x15                                                               |
 | req-fdesc | u8     | Requested file descriptor to use (0xff => Network Adapter selects) |
 | timeout   | u32    | Timeout in milliseconds                                            |
 | flags     | u16    | Option flags                                                       |
-| port      | u16    | TCP or UDP port                                                    |
+| port      | u16    | TCP port                                                           |
 | hostname  | STRING | Connection target                                                  |
 
 Possible responses: UINT8-VALUE, ERROR.
