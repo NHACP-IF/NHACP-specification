@@ -179,12 +179,19 @@ See the GET-ERROR-DETAILS request below.
 
 ## Protocol versioning
 
-This document describes version **0.1** of the protocol.  This
+This document describes version **0.2** of the protocol.  This
 section describes the changes between protocol revisions.  New
 revisions are backward-compatible with previous clients, to the
 extent possible; any possible compatibility issues are called out
 explicitly here.
 
+* Version 0.2
+    * Defined the new CONNECT request.
+    * Defined the ETIMEDOUT, EUNREACH, ECONNREFUSED, and ECONNRESET error
+      codes.
+    * Renamed FILE-CLOSE to CLOSE, FILE-READ to READ, and FILE-WRITE to WRITE.
+      The semantics of the operation are unchanged.
+    * Added per-request non-blocking I/O to READ and WRITE.
 * Version 0.1
     * Defined the protocol versioning convention.
     * Defined the new NHACP-REQUEST session mutiplexing scheme and
@@ -221,6 +228,7 @@ the version values defined here are authoritative:
 |--------|---------------------|
 | 0x0000 | initial NHACP draft |
 | 0x0001 | NHACP version 0.1   |
+| 0x0002 | NHACP version 0.2   |
 
 Historical note: NHACP-0.0's initial response, NHACP-STARTED, included
 a version field in the response which was not well-defined and, by
@@ -501,7 +509,7 @@ Retrieve the current date and time from the network adapter.
 
 Possible responses: DATE-TIME, ERROR
 
-### FILE-CLOSE
+### CLOSE
 
 Close a previously opened file descriptor.  Any resources associated with
 it on the network adapter will be freed.
@@ -612,12 +620,12 @@ Errors are returned with the following priority:
   then STORAGE-PUT-BLOCK MUST fail with an ESEEK error.
 * Other implementation-defined error conditions.
 
-### FILE-READ
+### READ
 
 Read data sequentially from a file descriptor.
 
-The maximum payload langth for a FILE-READ is 8192 bytes.  Network
-adapters MUST return an error for FILE-READ requests whose length
+The maximum payload langth for a READ is 8192 bytes.  Network
+adapters MUST return an error for READ requests whose length
 field exceeds this value.
 
 | Name   | Type | Notes                     |
@@ -629,24 +637,33 @@ field exceeds this value.
 
 Possible responses: DATA-BUFFER, ERROR
 
-There are no flags currently defined for FILE-READ; all values are
-reserved.
+The following flags are defined:
+
+| Name        | Value  | Notes                                     |
+|-------------|--------|-------------------------------------------|
+| IO_NONBLOCK | 0x0001 | Perform non-blocking I/O for this request |
+
+If the IO_NONBLOCK flag is specified, reads from a socket object
+will return only the data available at the time of the READ request
+rather than waiting for the full amount of data specified in the
+request to become available.  If IO_NONBLOCK is specified and no data
+is available, then the READ request MUST fail with an EAGAIN error.
 
 The length returned in the DATA-BUFFER response reflects
 the amount of data actuallty read from the underlying
 file object.  If the file cursor is beyond the object's
-end-of-file, then the returned length MUST be 0.
-If the read operation would cross the object's end-of-file,
-then the length MUST be the number of bytes read before
-the end-of-file was encountered.
+end-of-file, or, in the case of a socket, the network peer
+has disconnected and no data from that peer remains buffered,
+then the returned length MUST be 0.  If the read operation
+would cross the object's end-of-file, then the length MUST be
+the number of bytes read before the end-of-file was encountered.
 
-### FILE-WRITE
+### WRITE
 
-Perform a sequential write to a file descriptor.  If possible, the
-underlying storage (file/URL) should be updated as well.
+Perform a sequential write to a file descriptor.
 
-The maximum payload langth for a FILE-WRITE is 8192 bytes.  Network
-adapters MUST return an error for FILE-WRITE requests whose length
+The maximum payload langth for a WRITE is 8192 bytes.  Network
+adapters MUST return an error for WRITE requests whose length
 field exceeds this value.
 
 | Name   | Type | Notes                           |
@@ -657,10 +674,18 @@ field exceeds this value.
 | length | u16  | Number of bytes to write        |
 | data   | u8*  | Data to update the storage with |
 
-Possible responses: OK, ERROR
+Possible responses: OK, UINT16-VALUE, ERROR
 
-There are no flags currently defined for FILE-WRITE; all values are
-reserved.
+The flags are the same as those defined for the READ request.
+
+If the IO_NONBLOCK flag is specified, writes to a socket will not
+wait for space to become available in the network adapter's output
+queue. If all data is successfully written, the network adapter MUST
+return an OK response.  If only a partial write was completed, the
+network adapter MUST return a UINT16-VALUE response corresponding
+to the number of bytes successfully written.  If IO_NONBLOCK is
+specified and no bytes are successfully written, then the WRITE
+request MUST fail with an EAGAIN error.
 
 If the position of the file cursor causes the write to originate at or
 beyond the underlying file object's end-of-file or therwise crosses
@@ -674,7 +699,7 @@ return an error without performing the write operation.
 Errors are returned with the following priority:
 
 * If the underlying file object was not opened with write access, then
-  FILE-WRITE MUST fail with an EBADF error.
+  WRITE MUST fail with an EBADF error.
 * Other implementation-defined error conditions.
 
 ### FILE-SEEK
@@ -740,8 +765,8 @@ This request causes the network adapter to scan a directory for file names
 matching the specified pattern, retrieve the attributes of those files,
 and cache a list of those files to be retrieved one file at a time by future
 requests.  The directory must have already been opened.  Any cached listing
-is released upon a subsequent LIST-DIR or FILE-CLOSE request for that
-file descriptor.
+is released upon a subsequent LIST-DIR or CLOSE request for that file
+descriptor.
 
 | Name    | Type   | Notes                                |
 |---------|--------|--------------------------------------|
@@ -825,6 +850,40 @@ Create a directory at the specified location.
 
 Possible responses: OK, ERROR
 
+### CONNECT
+
+Establishes a network connection using TCP over IPv4 or IPv6.  This
+request is roughly equivalent to the combination of socket() + connect()
+as specified by IEEE Std 1003.1-2017.
+
+| Name      | Type   | Notes                     |
+|-----------|--------|---------------------------|
+| type      | u8     | 0x13                                                               |
+| req-fdesc | u8     | Requested file descriptor to use (0xff => Network Adapter selects) |
+| timeout   | u32    | Timeout in milliseconds                                            |
+| flags     | u16    | Option flags                                                       |
+| port      | u16    | TCP port                                                           |
+| hostname  | STRING | Connection target                                                  |
+
+Possible responses: UINT8-VALUE, ERROR.
+
+There are no flags currently defined for CONNECT; all values are
+reserved.
+
+The CONNECT request creates a socket object and establishes a connection
+to the specified port on the specified host.  If a connection cannot be
+established within the time specified by the timeout argument, then the
+request MUST fail with an error of ETIMEDOUT.  If the timeout argument is
+0, the network adapter MUST select a default connection timeout period,
+the value of which is left to the discretion of the network adapter
+implementation (values in the range of 45-90 seconds are typical, and a
+network adapter may choose to expose this as a configuration option).  A
+timeout value of 0xffffffff is invalid and MUST result in an EINVAL error.
+
+If the host is unreachable for any reason, the network adapter SHOULD return
+an EUNREACH error.  If the network peer refuses the connection, the server
+SHOULD return an ECONNREFUSED error.
+
 ### GOODBYE
 
 End an NHACP session.  If the session ID specifies the SYSTEM session,
@@ -883,30 +942,34 @@ and omit the detailed error message.
 
 The following error codes are defined:
 
-| Name      | Value | Notes                             |
-|-----------|-------|-----------------------------------|
-| undefined | 0     | undefined generic error           |
-| ENOTSUP   | 1     | Operation is not supported        |
-| EPERM     | 2     | Operation is not permitted        |
-| ENOENT    | 3     | Requested file does not exist     |
-| EIO       | 4     | Input/output error                |
-| EBADF     | 5     | Bad file descriptor               |
-| ENOMEM    | 6     | Out of memory                     |
-| EACCES    | 7     | Access denied                     |
-| EBUSY     | 8     | File is busy                      |
-| EEXIST    | 9     | File already exists               |
-| EISDIR    | 10    | File is a directory               |
-| EINVAL    | 11    | Invalid argument/request          |
-| ENFILE    | 12    | Too many open files               |
-| EFBIG     | 13    | File is too large                 |
-| ENOSPC    | 14    | Out of space                      |
-| ESEEK     | 15    | Seek on non-seekable file         |
-| ENOTDIR   | 16    | File is not a directory           |
-| ENOTEMPTY | 17    | Directory is not empty            |
-| ESRCH     | 18    | No such process or session        |
-| ENSESS    | 19    | Too many sessions                 |
-| EAGAIN    | 20    | Try again later                   |
-| EROFS     | 21    | Storage object is write-protected |
+| Name         | Value | Notes                             |
+|--------------|-------|-----------------------------------|
+| undefined    | 0     | undefined generic error           |
+| ENOTSUP      | 1     | Operation is not supported        |
+| EPERM        | 2     | Operation is not permitted        |
+| ENOENT       | 3     | Requested file does not exist     |
+| EIO          | 4     | Input/output error                |
+| EBADF        | 5     | Bad file descriptor               |
+| ENOMEM       | 6     | Out of memory                     |
+| EACCES       | 7     | Access denied                     |
+| EBUSY        | 8     | File is busy                      |
+| EEXIST       | 9     | File already exists               |
+| EISDIR       | 10    | File is a directory               |
+| EINVAL       | 11    | Invalid argument/request          |
+| ENFILE       | 12    | Too many open files               |
+| EFBIG        | 13    | File is too large                 |
+| ENOSPC       | 14    | Out of space                      |
+| ESEEK        | 15    | Seek on non-seekable file         |
+| ENOTDIR      | 16    | File is not a directory           |
+| ENOTEMPTY    | 17    | Directory is not empty            |
+| ESRCH        | 18    | No such process or session        |
+| ENSESS       | 19    | Too many sessions                 |
+| EAGAIN       | 20    | Try again later                   |
+| EROFS        | 21    | Storage object is write-protected |
+| ETIMEDOUT    | 22    | Operation timed out               |
+| EUNREACH     | 23    | Network peer is unreachable       |
+| ECONNREFUSED | 24    | Connection refused by peer        |
+| ECONNRESET   | 25    | Connection reset by peer          |
 
 All other error codes are reserved.
 
@@ -1061,7 +1124,7 @@ used for readability.
 | 0x8f                |                       |
 | 0x01                |                       |
 | 0x02 0x00           |                       |
-| 0x05 [FILE-CLOSE]   |                       |
+| 0x05 [CLOSE]        |                       |
 | 0x00                |                       |
 
 ### Opening a 1KB file, reading 1KB of data using sequential read, closing the file
@@ -1083,7 +1146,7 @@ used for readability.
 | 0x8f                |                       |
 | 0x01                |                       |
 | 0x06 0x00           |                       |
-| 0x09 [FILE-READ]    |                       |
+| 0x09 [READ]         |                       |
 | 0x00                |                       |
 | 0x00 0x04           |                       |
 |                     | 0x03 0x04             |
@@ -1093,7 +1156,7 @@ used for readability.
 | 0x8f                |                       |
 | 0x01                |                       |
 | 0x02 0x00           |                       |
-| 0x05 [FILE-CLOSE]   |                       |
+| 0x05 [CLOSE]        |                       |
 | 0x00                |                       |
 
 ### Opening a file, error return, getting error details
