@@ -186,12 +186,12 @@ extent possible; any possible compatibility issues are called out
 explicitly here.
 
 * Version 0.2
-    * Defined the new FDESC-GETPROP, FDESC-SETPROP, POLL, and CONNECT
-      requests.
+    * Defined the new CONNECT request.
     * Defined the ETIMEDOUT, EUNREACH, ECONNREFUSED, and ECONNRESET error
       codes.
     * Renamed FILE-CLOSE to CLOSE, FILE-READ to READ, and FILE-WRITE to WRITE.
       The semantics of the operation are unchanged.
+    * Added per-request non-blocking I/O to READ and WRITE.
 * Version 0.1
     * Defined the protocol versioning convention.
     * Defined the new NHACP-REQUEST session mutiplexing scheme and
@@ -850,75 +850,6 @@ Create a directory at the specified location.
 
 Possible responses: OK, ERROR
 
-### FDESC-GETPROP
-
-Get a file descriptor property value.  If the requested property is not
-valid for the file descriptor, the request MUST fail with an EINVAL error.
-
-| Name  | Type | Notes               |
-|-------|------|---------------------|
-| type  | u8   | 0x13                |
-| fdesc | u8   | File descriptor     |
-| which | u16  | The property to get |
-
-Possible responses: UINT32-VALUE, ERROR
-
-The following properties are defined:
-
-| Name   | Value | Notes                             |
-|--------|-------|-----------------------------------|
-| DTYPE  | 0x00  | Descriptor type (see below)       |
-| NBIO   | 0x01  | Non-blocking I/O                  |
-| RBUFSZ | 0x02  | Size of the read / receive buffer |
-| WBUFSZ | 0x03  | Size of the write / send buffer   |
-
-The following properties are defined:
-
-* *DTYPE*: The type of object described by the file descriptor.  See
-  values below.
-* *NBIO*: 0=non-blocking I/O is disabled, 1=non-blocking I/O is enabled.
-  This is analogous to querying the O_NONBLOCK flag with fcntl(F_GETFL)
-  as defined by IEEE Std 1003.1-2017.
-* *RBUFSZ*: This is analagous to getsockopt(SO_RCVBUF) defined by
-  IEEE Std 1003.1-2017.
-* *WBUFSZ*: This is analogous to getsockopt(SO_SNDBUF) defined by
-  IEEE Std 1003.1-2017.
-
-The following file descriptor types are defined:
-
-| Name       | Value      | Notes                    |
-|------------|------------|--------------------------|
-| DTYPE_FILE | 0x00000000 | Regular file             |
-| DTYPE_DIR  | 0x00000001 | Directory                |
-| DTYPE_SOCK | 0x00000002 | Stream socket (e.g. TCP) |
-
-### FDESC-SETPROP
-
-Set a file descriptor property value.  If the requested property is not
-valid for the file descriptor, the request MUST fail with an EINVAL error.
-If the requested property cannot be changed, the request MUST fail with
-with an EPERM error.  If an invalid value is specified for the property,
-the request MUST fail with an EINVAL error.
-
-| Name  | Type | Notes                  |
-|-------|------|------------------------|
-| type  | u8   | 0x14                   |
-| fdesc | u8   | File descriptor        |
-| which | u16  | The property to set    |
-| value | u32  | The new property value |
-
-Possible responses: OK, ERROR
-
-The following file properties are settable:
-
-* *NBIO*: 0=disables non-blocking I/O, 1=enables non-blocking I/O.  This is
-  analogous to setting or clearing the O_NONBLOCK flag with fcntl() as
-  defined by IEEE Std 1003.1-2017.
-* *RBUFSZ*: This is analagous to setsockopt(SO_RCVBUF) defined by
-  IEEE Std 1003.1-2017.
-* *WBUFSZ*: This is analogous to setsockopt(SO_SNDBUF) defined by
-  IEEE Std 1003.1-2017.
-
 ### CONNECT
 
 Establishes a network connection using TCP over IPv4 or IPv6.  This
@@ -927,7 +858,7 @@ as specified by IEEE Std 1003.1-2017.
 
 | Name      | Type   | Notes                     |
 |-----------|--------|---------------------------|
-| type      | u8     | 0x15                                                               |
+| type      | u8     | 0x13                                                               |
 | req-fdesc | u8     | Requested file descriptor to use (0xff => Network Adapter selects) |
 | timeout   | u32    | Timeout in milliseconds                                            |
 | flags     | u16    | Option flags                                                       |
