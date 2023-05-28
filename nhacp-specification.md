@@ -637,16 +637,26 @@ field exceeds this value.
 
 Possible responses: DATA-BUFFER, ERROR
 
-There are no flags currently defined for READ; all values are
-reserved.
+The following flags are defined:
+
+| Name        | Value  | Notes                                     |
+|-------------|--------|-------------------------------------------|
+| IO_NONBLOCK | 0x0001 | Perform non-blocking I/O for this request |
+
+If the IO_NONBLOCK flag is specified, reads from a socket object
+will return only the data available at the time of the READ request
+rather than waiting for the full amount of data specified in the
+request to become available.  If IO_NONBLOCK is specified and no data
+is available, then the READ request MUST fail with an EAGAIN error.
 
 The length returned in the DATA-BUFFER response reflects
 the amount of data actuallty read from the underlying
 file object.  If the file cursor is beyond the object's
-end-of-file, then the returned length MUST be 0.
-If the read operation would cross the object's end-of-file,
-then the length MUST be the number of bytes read before
-the end-of-file was encountered.
+end-of-file, or, in the case of a socket, the network peer
+has disconnected and no data from that peer remains buffered,
+then the returned length MUST be 0.  If the read operation
+would cross the object's end-of-file, then the length MUST be
+the number of bytes read before the end-of-file was encountered.
 
 ### WRITE
 
@@ -664,10 +674,18 @@ field exceeds this value.
 | length | u16  | Number of bytes to write        |
 | data   | u8*  | Data to update the storage with |
 
-Possible responses: OK, ERROR
+Possible responses: OK, UINT16-VALUE, ERROR
 
-There are no flags currently defined for WRITE; all values are
-reserved.
+The flags are the same as those defined for the READ request.
+
+If the IO_NONBLOCK flag is specified, writes to a socket will not
+wait for space to become available in the network adapter's output
+queue. If all data is successfully written, the network adapter MUST
+return an OK response.  If only a partial write was completed, the
+network adapter MUST return a UINT16-VALUE response corresponding
+to the number of bytes successfully written.  If IO_NONBLOCK is
+specified and no bytes are successfully written, then the WRITE
+request MUST fail with an EAGAIN error.
 
 If the position of the file cursor causes the write to originate at or
 beyond the underlying file object's end-of-file or therwise crosses
@@ -949,9 +967,9 @@ the time specified, the network adapter MUST return an value of 0.
 
 ### CONNECT
 
-Establishes a network connection using TCP/IP or UDP/IP.  This request
-is roughly equivalent to the combination of socket() + connect() as
-specified by IEEE Std 1003.1-2017.
+Establishes a network connection using TCP over IPv4 or IPv6.  This
+request is roughly equivalent to the combination of socket() + connect()
+as specified by IEEE Std 1003.1-2017.
 
 | Name      | Type   | Notes                     |
 |-----------|--------|---------------------------|
@@ -964,12 +982,8 @@ specified by IEEE Std 1003.1-2017.
 
 Possible responses: UINT8-VALUE, ERROR.
 
-The following flags are defined:
-
-| Name       | Value  | Notes                                                  |
-|------------|--------|--------------------------------------------------------|
-| O_NONBLOCK | 0x0080 | Enable non-blocking mode on the resulting file descriptor |
-| O_DGRAM    | 0x1000 | 1=Establish a datagram connection, 0=stream connection    |
+There are no flags currently defined for CONNECT; all values are
+reserved.
 
 The CONNECT request creates a socket object and establishes a connection
 to the specified port on the specified host.  If a connection cannot be
@@ -980,9 +994,6 @@ the value of which is left to the discretion of the network adapter
 implementation (values in the range of 45-90 seconds are typical, and a
 network adapter may choose to expose this as a configuration option).  A
 timeout value of 0xffffffff is invalid and MUST result in an EINVAL error.
-
-If the O_DGRAM flag is specified, a UDP connection will be established.
-Otherwise, a TCP connection will be established.
 
 If the host is unreachable for any reason, the network adapter SHOULD return
 an EUNREACH error.  If the network peer refuses the connection, the server
